@@ -26,11 +26,82 @@ local
       end
    end
 
+   % Fonction qui convertit un chord en Extended Chord
+   fun {ChordToExtended Chord} {
+      case Chord
+      of Note|Tail then
+         {NoteToExtended Note}|{ChordToExtended Tail}
+      [] nil then nil
+         % [] est l'équivalent d'un else if "case ... of"
+   }
+
+   fun {IsNote Item}
+      case Item of Name#Octave then true
+      [] Atom then 
+
+         case {AtomToString Atom}
+         of [_] then true
+
+         [] [N O] then true
+
+         else false
+         end
+
+      else false
+      end
+   end
+
+   fun {IsChord Item}
+      case Item of H|T then
+         if {isNote H} then true
+         else false
+         end
+      else false
+      end
+   end
+
+   fun {IsExtendedNote Item}
+      if {IsRecord Item} then
+         if {Label Item} == note then true
+         else false
+         end
+      else false
+      end
+   end 
+
+   fun {IsTransformation Item}
+      if {Label Item} == duration then true
+      elseif {Label Item} == stretch then true
+      elseif {Label Item} == drone then true
+      elseif {Label Item} == transpose then true
+      else false 
+      end
+   end
+
+   fun {Duration partition}
+      % Cette transformation fixe la durée de la partition au nombre de secondes indiqué. Il faut donc
+      %adapter la durée de chaque note et accord proportionnellement à leur durée actuelle pour que
+      %la durée totale devienne celle indiquée dans la transformation.
+      nil
+   end
+
+   fun {Stretch partition}
+      %Cette transformation étire la durée de la partition par le facteur indiqué. Il faut donc étirer la
+      %durée de chaque note et accord en conséquence.
+      nil
+   end
+   
+   
+
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
    fun {PartitionToTimedList Partition}
-      % TODO
-      nil
+      case Partition of
+      H|T then
+         if {IsNote H} then {NoteToExtended H}|{PartitionToTimedList T}
+         elseif {IsChord H} then {ChordToExtended H}|{PartitionToTimedList T}
+         elseif {IsExtendedNote H} then {PartitionToTimedList T}
+         elseif {IsTransformation H} then 
    end
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
