@@ -1,9 +1,11 @@
 local
    % See project statement for API details.
    % !!! Please remove CWD identifier when submitting your project !!!
-   CWD = '/directory/to/the/project/template/' % Put here the **absolute** path to the project files
+   CWD = '/home/theo/Code/Oz/MaestrOZ/Template' % Put here the **absolute** path to the project files
    [Project] = {Link [CWD#'Project2022.ozf']}
    Time = {Link ['x-oz://boot/Time']}.1.getReferenceTime
+
+   \insert 'testPerso.oz'   
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -27,15 +29,18 @@ local
    end
 
    % Fonction qui convertit un chord en Extended Chord
-   fun {ChordToExtended Chord} {
+   fun {ChordToExtended Chord}
       case Chord
       of Note|Tail then
          {NoteToExtended Note}|{ChordToExtended Tail}
       [] nil then nil
          % [] est l'équivalent d'un else if "case ... of"
-   }
+         end
+      end
+   end
 
    fun {IsNote Item}
+      {Browse yeye}
       case Item of Name#Octave then true
       [] Atom then 
 
@@ -70,14 +75,19 @@ local
    end 
 
    fun {IsTransformation Item}
-      if {Label Item} == duration then true
-      elseif {Label Item} == stretch then true
-      elseif {Label Item} == drone then true
-      elseif {Label Item} == transpose then true
-      else false 
+      if {IsRecord Item}
+         if {Label Item} == duration then true
+         elseif {Label Item} == stretch then true
+         elseif {Label Item} == drone then true
+         elseif {Label Item} == transpose then true
+         else false 
+         end
+      else false
       end
    end
 
+
+   %TODO
    fun {Duration partition}
       % Cette transformation fixe la durée de la partition au nombre de secondes indiqué. Il faut donc
       %adapter la durée de chaque note et accord proportionnellement à leur durée actuelle pour que
@@ -90,6 +100,12 @@ local
       %durée de chaque note et accord en conséquence.
       nil
    end
+
+   fun {Drone }
+   end
+
+   fun {Transpose }
+   end
    
    
 
@@ -100,8 +116,16 @@ local
       H|T then
          if {IsNote H} then {NoteToExtended H}|{PartitionToTimedList T}
          elseif {IsChord H} then {ChordToExtended H}|{PartitionToTimedList T}
-         elseif {IsExtendedNote H} then {PartitionToTimedList T}
          elseif {IsTransformation H} then 
+            if {Label Item} == duration then {Duration H.seconds %partition}
+            elseif {Label Item} == stretch then {Stretch H.factor %partition}
+            elseif {Label Item} == drone then {Drone H.note H.amount}
+            elseif {Label Item} == transpose then {Transpose H.semitones %partition}
+            end
+         else H|{PartitionToTimedList T}
+         end
+      [] nil then nil
+      end
    end
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -136,3 +160,16 @@ in
    % Shows the total time to run your code.
    {Browse {IntToFloat {Time}-Start} / 1000.0}
 end
+
+%%%%%%%%%%%%%%%%%%TESTS%%%%%%%%%%%%%%%%%%%%%%%
+
+declare
+
+NoteTrue = note(name:Name octave:4 sharp:true duration:1.0 instrument:none)
+NoteFalse = nut(name:Name octave:4 sharp:true duration:1.0 instrument:none)
+
+{Browse 'IsNote(NoteTrue) --> should print true'}
+{Browse {IsNote NoteTrue}}
+
+{Browse 'IsNote(NoteFalse) --> should print false'}
+{Browse {IsNote NoteFalse}}
