@@ -111,20 +111,35 @@ local
       end
    end
 
-   fun {NextSemiTone Tone}
-      if Tone == 'A' then 'B'
-      elseif Tone == 'B' then 'C'
-      elseif Tone == 'C' then 'D'
-      elseif Tone == 'D' then 'E'
-      elseif Tone == 'E' then 'F'
-      elseif Tone == 'F' then 'G'
+   fun {NextSemiTone Note} %return la Note suivante
+      if Note == 'A' then 'B'
+      elseif Note == 'B' then 'C'
+      elseif Note == 'C' then 'D'
+      elseif Note == 'D' then 'E'
+      elseif Note == 'E' then 'F'
+      elseif Note == 'F' then 'G'
       else 'A'
       end
    end
 
 
-   fun {TransposeNote Note N}
-      if Note.name == 'E' orelse Note.name == 'B' then
+   fun {TransposeNote Note N} % tranforme Note d'un semi ton vers le haut
+      if N == 0 then Note
+      else
+         if Note.name == 'E' orelse Note.name == 'B' then
+            Note.name = {NextSemiTone note.name}
+            Note
+         else
+            if Note.sharp then
+               Note.sharp = false
+               Note.name = {NextSemiTone Note.name}
+               Note
+            else
+               Note.sharp = true
+               Note
+            end
+         end
+      end
    end
 
    fun {TransposeChord Chord N} %Transpose toutes les notes de l'accord de N demi tons
@@ -136,6 +151,7 @@ local
             end
          end
          [{TransposeChordAux Chord.1 N} Chord.2]
+      end
    end
 
    %TODO
@@ -209,16 +225,16 @@ local
          elseif {IsTransformation H} then 
 
             if {Label Item} == duration then %done
-               {Duration H.seconds Head}
+               {Duration H.seconds Head} % problème car Head ne se finit pas (pas de nil a la fin)
 
             elseif {Label Item} == stretch then %done
-               {Stretch H.factor Head}
+               {Stretch H.factor Head} % problème car Head ne se finit pas (pas de nil a la fin)
 
-            elseif {Label Item} == drone then 
-               {Concat {Drone H.note H.amount} {PartitionToTimedList T Head}} %ajoute amount note à la partition
+            elseif {Label Item} == drone then %ajoute amount note à la partition
+               {Concat {Drone H.note H.amount} {PartitionToTimedList T Head}} % problème car Head ne se finit pas (pas de nil a la fin)
 
             elseif {Label Item} == transpose then 
-               {Transpose H.semitones Head}
+               {Transpose H.semitones Head} % problème car Head ne se finit pas (pas de nil a la fin)
 
             end
          else H|{PartitionToTimedList T} % on a un(e) accord/note étendu(e)
