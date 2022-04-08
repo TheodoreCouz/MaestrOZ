@@ -9,6 +9,8 @@ local
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+   declare
+
    % Translate a note to the extended notation.
    fun {NoteToExtended Note}
       case Note
@@ -40,7 +42,6 @@ local
    end
 
    fun {IsNote Item}
-      {Browse yeye}
       case Item of Name#Octave then true
       [] Atom then 
 
@@ -66,10 +67,7 @@ local
    end
 
    fun {IsExtendedNote Item}
-      if {IsRecord Item} then
-         if {Label Item} == note then true
-         else false
-         end
+      if {IsRecord Item} then {Label Item} == note
       else false
       end
    end 
@@ -88,43 +86,82 @@ local
 
 
    %TODO
-   fun {Duration partition}
+   fun {Duration Seconds partition}
       % Cette transformation fixe la durée de la partition au nombre de secondes indiqué. Il faut donc
       %adapter la durée de chaque note et accord proportionnellement à leur durée actuelle pour que
       %la durée totale devienne celle indiquée dans la transformation.
       nil
    end
 
-   fun {Stretch partition}
+   fun {Stretch Factor partition}
       %Cette transformation étire la durée de la partition par le facteur indiqué. Il faut donc étirer la
       %durée de chaque note et accord en conséquence.
       nil
    end
 
-   fun {Drone }
+   fun {Drone Item Amount}
+      %Un bourdon (drone en anglais) est une répétition de notes (ou d'accords) identiques. Il faut
+      %répéter la note ou l'accord autant de fois que la quantité indiquée par amount.
+      if Amount == 0 then silence(duration:0)
+      else
+         if {IsNote Item} then
+            {NoteToExtended Item}|{Drone Item Amount-1}
+         elseif {IsChord Item} then
+            {ChordToExtended Item}|{Drone Item Amount-1}
+         else
+            Item|{Drone Item Amount-1}
+         end
+      end
    end
 
-   fun {Transpose }
+   {Browse {Drone note(name:C octave:4 sharp:false duraton:1.0 instrument: none)}}
+
+   fun {Transpose Semitones}
+      %Cette transformation transpose la partition d'un certain nombre de demi-tons vers le haut
+      %(nombre positif) ou vers le bas (nombre négatif). Référez vous à la section sur les notes cidessus pour plus de détails concernant les distances en demi-tons entre les notes. Par
+      %exemple, transposer A4 de 4 demi-tons vers le haut donne C#5 (par intervalle d'un demi-ton:
+      %A4, A#4, B4, C5, C#5).
    end
    
    
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-   fun {PartitionToTimedList Partition}
+   fun {PartitionToTimedListAux Partition Head}
       case Partition of
       H|T then
-         if {IsNote H} then {NoteToExtended H}|{PartitionToTimedList T}
-         elseif {IsChord H} then {ChordToExtended H}|{PartitionToTimedList T}
+
+         if {IsNote H} then 
+            {NoteToExtended H}|{PartitionToTimedList T Head} %Etend la note
+
+         elseif {IsChord H} then 
+            {ChordToExtended H}|{PartitionToTimedList T Head} %Etend l'accord
+
          elseif {IsTransformation H} then 
-            if {Label Item} == duration then {Duration H.seconds %partition}
-            elseif {Label Item} == stretch then {Stretch H.factor %partition}
-            elseif {Label Item} == drone then {Drone H.note H.amount}
-            elseif {Label Item} == transpose then {Transpose H.semitones %partition}
+
+            if {Label Item} == duration then 
+               {Duration H.seconds Head}
+
+            elseif {Label Item} == stretch then 
+               {Stretch H.factor Head}
+
+            elseif {Label Item} == drone then 
+               {Drone H.note H.amount}|{PartitionToTimedList T Head}
+
+            elseif {Label Item} == transpose then 
+               {Transpose H.semitones Head}
+
             end
-         else H|{PartitionToTimedList T}
+         else H|{PartitionToTimedList T} % on a un(e) accord/note étendu(e)
          end
       [] nil then nil
+      end
+   end
+
+   fun {PartitionToTimedList Partition}
+      case Partition of H|T then
+         {PartitionToTimedListAux Partition H}
+      else nil
       end
    end
 
