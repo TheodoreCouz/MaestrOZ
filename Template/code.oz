@@ -7,8 +7,32 @@ local
 
    \insert 'testPerso.oz'   
 
-   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+   %%%%%%%%%%%%%%%%%UTILS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+   declare 
+   fun {Concat A B} % réalise la concaténation de deux listes
+      case A of H|T then H|{Concat T B}
+      [] nil then B
+      end
+   end
+
+   fun {GetDuration Partition} % return la durée totale d'une partition
+      local GetDurationAux in
+         GetDurationAux = fun {$ Partition Acc}
+            case Partition of nil then Acc
+            [] H|T then
+               if {IsExtendedNote H} then {GetDurationAux T Acc+H.duration} %si la head est une Extended note
+               else then {GetDurationAux T Acc+H.2} %si la head est un extended chord
+               end
+            end
+         end
+         {GetDurationAux Partition 0}
+      end
+   end
+
+
+
+   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
    declare
 
    % Translate a note to the extended notation.
@@ -31,17 +55,20 @@ local
    end
 
    % Fonction qui convertit un chord en Extended Chord
-   fun {ChordToExtended Chord}
-      case Chord
-      of Note|Tail then
-         {NoteToExtended Note}|{ChordToExtended Tail}
-      [] nil then nil
-         % [] est l'équivalent d'un else if "case ... of"
+   fun {ChordToExtended Chord} % return un accord sous le format: [['liste des notes'], durée des notes]
+      local ChordToExtendedAux in
+         ChordToExtendedAux = fun {$ Chord}
+            case Chord
+            of Note|Tail then
+               {NoteToExtended Note}|{ChordToExtended Tail}
+            [] nil then nil
+            end
          end
+         [{ChordToExtendedAux}, Chord.1.duration]
       end
    end
 
-   fun {IsNote Item}
+   fun {IsNote Item}  %return true si Item est une note
       case Item of Name#Octave then true
       [] Atom then 
 
@@ -57,7 +84,7 @@ local
       end
    end
 
-   fun {IsChord Item}
+   fun {IsChord Item} %return true si Item est un accord
       case Item of H|T then
          if {isNote H} then true
          else false
@@ -66,13 +93,13 @@ local
       end
    end
 
-   fun {IsExtendedNote Item}
+   fun {IsExtendedNote Item} %return true si Item est une Extended note
       if {IsRecord Item} then {Label Item} == note
       else false
       end
    end 
 
-   fun {IsTransformation Item}
+   fun {IsTransformation Item} % return true si Item est une transformation
       if {IsRecord Item}
          if {Label Item} == duration then true
          elseif {Label Item} == stretch then true
@@ -84,25 +111,65 @@ local
       end
    end
 
+   fun {NextSemiTone Tone}
+      if Tone == 'A' then 'B'
+      elseif Tone == 'B' then 'C'
+      elseif Tone == 'C' then 'D'
+      elseif Tone == 'D' then 'E'
+      elseif Tone == 'E' then 'F'
+      elseif Tone == 'F' then 'G'
+      else 'A'
+      end
+   end
+
+
+   fun {TransposeNote Note N}
+      if Note.name == 'E' orelse Note.name == 'B' then
+   end
+
+   fun {TransposeChord Chord N} %Transpose toutes les notes de l'accord de N demi tons
+      local TransposeChordAux in
+         TransposeChordAux = fun {$ List}
+            case List if nil then nil
+            [] H|T then
+               {TransposeNote H N}|{TransposeChordAux T N}
+            end
+         end
+         [{TransposeChordAux Chord.1 N} Chord.2]
+   end
 
    %TODO
-   fun {Duration Seconds partition}
+   fun {Duration Seconds Partition}
       % Cette transformation fixe la durée de la partition au nombre de secondes indiqué. Il faut donc
       %adapter la durée de chaque note et accord proportionnellement à leur durée actuelle pour que
       %la durée totale devienne celle indiquée dans la transformation.
-      nil
+      FullDuration = {GetDuration Partition}
+      Coef = Seconds div FullDuration
+      {Stretch Coef Partition}
    end
 
-   fun {Stretch Factor partition}
+   fun {Stretch Factor Partition}
       %Cette transformation étire la durée de la partition par le facteur indiqué. Il faut donc étirer la
       %durée de chaque note et accord en conséquence.
-      nil
+      case Partition of H|T then
+         if {IsExtendedNote H} then
+            H.duration = H.duration*Factor
+            H|{Stretch Factor T}
+         else
+            H.2 = H.2*Factor
+            H|{Stretch Factor T}
+         end
+      else nil
+      end
+   end
+
+
    end
 
    fun {Drone Item Amount}
       %Un bourdon (drone en anglais) est une répétition de notes (ou d'accords) identiques. Il faut
       %répéter la note ou l'accord autant de fois que la quantité indiquée par amount.
-      if Amount == 0 then silence(duration:0)
+      if Amount == 0 then nil
       else
          if {IsNote Item} then
             {NoteToExtended Item}|{Drone Item Amount-1}
@@ -118,9 +185,11 @@ local
 
    fun {Transpose Semitones}
       %Cette transformation transpose la partition d'un certain nombre de demi-tons vers le haut
-      %(nombre positif) ou vers le bas (nombre négatif). Référez vous à la section sur les notes cidessus pour plus de détails concernant les distances en demi-tons entre les notes. Par
+      %(nombre positif) ou vers le bas (nombre négatif). Référez vous à la section sur les notes ci-dessus
+      %pour plus de détails concernant les distances en demi-tons entre les notes. Par
       %exemple, transposer A4 de 4 demi-tons vers le haut donne C#5 (par intervalle d'un demi-ton:
       %A4, A#4, B4, C5, C#5).
+
    end
    
    
@@ -139,14 +208,14 @@ local
 
          elseif {IsTransformation H} then 
 
-            if {Label Item} == duration then 
+            if {Label Item} == duration then %done
                {Duration H.seconds Head}
 
-            elseif {Label Item} == stretch then 
+            elseif {Label Item} == stretch then %done
                {Stretch H.factor Head}
 
             elseif {Label Item} == drone then 
-               {Drone H.note H.amount}|{PartitionToTimedList T Head}
+               {Concat {Drone H.note H.amount} {PartitionToTimedList T Head}} %ajoute amount note à la partition
 
             elseif {Label Item} == transpose then 
                {Transpose H.semitones Head}
