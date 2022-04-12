@@ -4,9 +4,7 @@ local
    CWD = '/home/theo/Code/Oz/MaestrOZ/Template' % Put here the **absolute** path to the project files
    [Project] = {Link [CWD#'Project2022.ozf']}
    Time = {Link ['x-oz://boot/Time']}.1.getReferenceTime
-
-   \insert 'testPerso.oz'   
-
+ 
    %%%%%%%%%%%%%%%%%UTILS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
    declare 
@@ -127,16 +125,16 @@ local
       if N == 0 then Note
       else
          if Note.name == 'E' orelse Note.name == 'B' then
-            Note.name = {NextSemiTone note.name}
-            Note
+            Note.name = {NextSemiTone Note.name}
+            {TransposeNote Note N-1}
          else
-            if Note.sharp then
+            if Note.sharp then % si c'est un # alors on passe a la note suivante
                Note.sharp = false
                Note.name = {NextSemiTone Note.name}
-               Note
-            else
+               {TransposeNote Note N-1}
+            else % sinon on ajoute juste un # a la note
                Note.sharp = true
-               Note
+               {TransposeNote Note N-1}
             end
          end
       end
@@ -199,13 +197,21 @@ local
 
    {Browse {Drone note(name:C octave:4 sharp:false duraton:1.0 instrument: none)}}
 
-   fun {Transpose Semitones}
+   fun {Transpose Semitones Partition}
       %Cette transformation transpose la partition d'un certain nombre de demi-tons vers le haut
       %(nombre positif) ou vers le bas (nombre négatif). Référez vous à la section sur les notes ci-dessus
       %pour plus de détails concernant les distances en demi-tons entre les notes. Par
       %exemple, transposer A4 de 4 demi-tons vers le haut donne C#5 (par intervalle d'un demi-ton:
       %A4, A#4, B4, C5, C#5).
-
+      
+      case Partition of H|T then
+         if {IsExtendedNote H} then 
+            {TransposeNote H Semitones}|{Transpose Semitones Partition}
+         else
+            {TransposeChord H Semitones}|{Transpose Semitones Partition}
+         end
+      else nil
+      end
    end
    
    
