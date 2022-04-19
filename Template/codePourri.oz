@@ -7,7 +7,6 @@ local
  
    %%%%%%%%%%%%%%%%%UTILS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-   declare 
    fun {Concat A B} % réalise la concaténation de deux listes
       case A of H|T then H|{Concat T B}
       [] nil then B
@@ -20,7 +19,7 @@ local
             case Partition of nil then Acc
             [] H|T then
                if {IsExtendedNote H} then {GetDurationAux T Acc+H.duration} %si la head est une Extended note
-               else then {GetDurationAux T Acc+H.2} %si la head est un extended chord
+               else {GetDurationAux T Acc+H.2} %si la head est un extended chord
                end
             end
          end
@@ -31,7 +30,6 @@ local
 
 
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-   declare
 
    % Translate a note to the extended notation.
    fun {NoteToExtended Note}
@@ -54,15 +52,16 @@ local
 
    % Fonction qui convertit un chord en Extended Chord
    fun {ChordToExtended Chord} % return un accord sous le format: [['liste des notes'], durée des notes]
-      local ChordToExtendedAux in
+      local
          ChordToExtendedAux = fun {$ Chord}
             case Chord
             of Note|Tail then
                {NoteToExtended Note}|{ChordToExtended Tail}
-            [] nil then nil
+            else nil
             end
          end
-         [{ChordToExtendedAux}, Chord.1.duration]
+      in
+         [{ChordToExtendedAux Chord} Chord.1.duration]
       end
    end
 
@@ -98,7 +97,7 @@ local
    end 
 
    fun {IsTransformation Item} % return true si Item est une transformation
-      if {IsRecord Item}
+      if {IsRecord Item} then
          if {Label Item} == duration then true
          elseif {Label Item} == stretch then true
          elseif {Label Item} == drone then true
@@ -143,9 +142,9 @@ local
    fun {TransposeChord Chord N} %Transpose toutes les notes de l'accord de N demi tons
       local TransposeChordAux in
          TransposeChordAux = fun {$ List}
-            case List if nil then nil
-            [] H|T then
+            case List of H|T then
                {TransposeNote H N}|{TransposeChordAux T N}
+            else nil
             end
          end
          [{TransposeChordAux Chord.1 N} Chord.2]
@@ -157,9 +156,11 @@ local
       % Cette transformation fixe la durée de la partition au nombre de secondes indiqué. Il faut donc
       %adapter la durée de chaque note et accord proportionnellement à leur durée actuelle pour que
       %la durée totale devienne celle indiquée dans la transformation.
-      FullDuration = {GetDuration Partition}
-      Coef = Seconds div FullDuration
-      {Stretch Coef Partition}
+      local Coef FullDuration in
+         FullDuration = {GetDuration Partition}
+         Coef = Seconds div FullDuration
+         {Stretch Coef Partition}
+      end
    end
 
    fun {Stretch Factor Partition}
@@ -177,9 +178,6 @@ local
       end
    end
 
-
-   end
-
    fun {Drone Item Amount}
       %Un bourdon (drone en anglais) est une répétition de notes (ou d'accords) identiques. Il faut
       %répéter la note ou l'accord autant de fois que la quantité indiquée par amount.
@@ -194,8 +192,6 @@ local
          end
       end
    end
-
-   {Browse {Drone note(name:C octave:4 sharp:false duraton:1.0 instrument: none)}}
 
    fun {Transpose Semitones Partition}
       %Cette transformation transpose la partition d'un certain nombre de demi-tons vers le haut
@@ -229,17 +225,17 @@ local
             {ChordToExtended H}|{PartitionToTimedList T Head} %Etend l'accord
 
          elseif {IsTransformation H} then 
-
-            if {Label Item} == duration then %done
+            % should use pattern matching
+            if {Label H} == duration then %done
                {Duration H.seconds Head} % problème car Head ne se finit pas (pas de nil a la fin)
 
-            elseif {Label Item} == stretch then %done
+            elseif {Label H} == stretch then %done
                {Stretch H.factor Head} % problème car Head ne se finit pas (pas de nil a la fin)
 
-            elseif {Label Item} == drone then %ajoute amount note à la partition
+            elseif {Label H} == drone then %ajoute amount note à la partition
                {Concat {Drone H.note H.amount} {PartitionToTimedList T Head}} % problème car Head ne se finit pas (pas de nil a la fin)
 
-            elseif {Label Item} == transpose then 
+            elseif {Label H} == transpose then 
                {Transpose H.semitones Head} % problème car Head ne se finit pas (pas de nil a la fin)
 
             end
@@ -272,32 +268,20 @@ local
    % \insert '/full/absolute/path/to/your/tests.oz'
    % !!! Remove this before submitting.
 in
-   Start = {Time}
+   {Browse '-'}
+   %Start = {Time}
 
    % Uncomment next line to run your tests.
    % {Test Mix PartitionToTimedList}
 
    % Add variables to this list to avoid "local variable used only once"
    % warnings.
-   {ForAll [NoteToExtended Music] Wait}
+   %{ForAll [NoteToExtended Music] Wait}
    
    % Calls your code, prints the result and outputs the result to `out.wav`.
    % You don't need to modify this.
-   {Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
+   %{Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
    
    % Shows the total time to run your code.
-   {Browse {IntToFloat {Time}-Start} / 1000.0}
+   %{Browse {IntToFloat {Time}-Start} / 1000.0}
 end
-
-%%%%%%%%%%%%%%%%%%TESTS%%%%%%%%%%%%%%%%%%%%%%%
-
-declare
-
-NoteTrue = note(name:Name octave:4 sharp:true duration:1.0 instrument:none)
-NoteFalse = nut(name:Name octave:4 sharp:true duration:1.0 instrument:none)
-
-{Browse 'IsNote(NoteTrue) --> should print true'}
-{Browse {IsNote NoteTrue}}
-
-{Browse 'IsNote(NoteFalse) --> should print false'}
-{Browse {IsNote NoteFalse}}
