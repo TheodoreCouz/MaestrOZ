@@ -30,124 +30,53 @@ fun {TotalDuration Partition}
     end
 end
 
-% return a note identical to [Note] but with the next semitone
-fun {NextSemiTone Note} Name Octave Sharp in
-    if Note.sharp then
-        Sharp = false
-        Octave = Note.octave
-
-        if Note.name == c then
-            Name = d
-        elseif Note.name == d then
-            Name = e
-        elseif Note.name == f then
-            Name = g
-        elseif Note.name == g then
-            Name = a
-        elseif Note.name == a then
-            Name = b
-        else skip
+% return the next notes (n tones)
+fun {NextNote N Note} Spectrum Start Index O Res in
+    Spectrum = s(c1 c#1 d1 d#1 e1 f1 f#1 g1 g#1 a1 a#1 b1)
+    if Note.name == c then
+        if Note.sharp then Start = 2
+        else Start = 1
         end
-    else
-        if Note.name == e then 
-            Name = f
-            Sharp = false
-            Octave = Note.octave
-        elseif Note.name == b then 
-            Name = c
-            Octave = Note.octave + 1
-            Sharp = false
-        else 
-            Name = Note.name
-            Sharp = true
-            Octave = Note.octave
+    elseif Note.name == d then
+        if Note.sharp then Start = 4
+        else Start = 3
         end
+    elseif Note.name == e then
+        Start = 5
+    elseif Note.name == f then
+        if Note.sharp then Start = 7
+        else Start = 6
+        end
+    elseif Note.name == g then
+        if Note.sharp then Start = 9
+        else Start = 8
+        end
+    elseif Note.name == a then
+        if Note.sharp then Start = 11
+        else Start = 10
+        end
+    elseif Note.name == b then
+        Start = 12
+    else skip
     end
-    note(
-        duration:(Note.duration) 
-        instrument:(Note.instrument) 
-        name:Name 
-        octave:Octave 
-        sharp:Sharp
-        )
-end
+    if ((Start+N) mod 12) < 0 then
+        Index = 12 + ((Start+N) mod 12)
+    else Index = ((Start+N) mod 12)
+    end
         
-
-% return a note identical to [Note] but with the previous semitone
-fun {PreviousSemiTone Note} Name Octave Sharp in
-    if Note.sharp then
-        Sharp = false
-        Octave = Note.octave
-        Name = Note.name
-    else
-        if Note.name == c then
-            Name = b
-            Sharp = false
-            Octave = Note.octave - 1
-        elseif Note.name == d then
-            Name = c
-            Sharp = true
-            Octave = Note.octave
-        elseif Note.name == e then %
-            Name = d
-            Sharp = true
-            Octave = Note.octave
-        elseif Note.name == f then
-            Name = e
-            Sharp = false
-            Octave = Note.octave
-        elseif Note.name == g then
-            Name = f
-            Sharp = true
-            Octave = Note.octave
-        elseif Note.name == a then
-            Name = g
-            Sharp = true
-            Octave = Note.octave
-        elseif Note.name == b then 
-            Name = a
-            Octave = Note.octave 
-            Sharp = true
-        else skip
-        end
-    end
+    Res = {NoteToExtended Spectrum.Index}
+    O = Note.octave + {FloatToInt {IntToFloat (Start+N)}/{IntToFloat 12}}
+    {Browse O}
     note(
-        duration:(Note.duration) 
-        instrument:(Note.instrument) 
-        name:Name 
-        octave:Octave 
-        sharp:Sharp
-        )
+        duartion:Note.duration
+        instrument:Note.instrument
+        name:Res.name
+        octave:O 
+        sharp:Res.sharp
+    )
 end
 
-% transpose [Note] of 1 semitone higher (lower)
-fun {TransposeNote N Note}
-    if N > 0 then 
-        {NextSemiTone Note}
-    else
-        {PreviousSemiTone Note}
-    end
-end
 
-% transpose every note of [Chord] of 1 semitone higher (lower)
-fun {TransposeChord N Chord}
-    case Chord of H|T then
-        {TransposeNote N H}|{TransposeChord N T}
-    else nil
-    end
-end
-
-% transposes every item of [Partition] of 1 semitone higher (lower)
-fun {TransposeOnce N Partition} Dir in
-    case Partition of H|T then
-        if {Label H} == note then
-            {TransposeNote N H}|{TransposeOnce N T}
-        else
-            {TransposeChord N H}|{TransposeOnce N T}
-        end
-    else nil
-    end
-end
 
 %%%%%%%%%%%%%%%%%%%%%%%%EXTENDED%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

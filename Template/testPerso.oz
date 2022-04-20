@@ -107,3 +107,7 @@ declare
 Flat = {PartitionToTimedList [c1 c2]}
 {Browse {Transpose 3 Flat}}
 
+declare
+Note = {NoteToExtended c#3}
+{Browse {NextNote ~12 note(duration:2 instrument:violon name:c octave:3 sharp:false)}}
+
