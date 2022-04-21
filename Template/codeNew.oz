@@ -31,7 +31,7 @@ fun {TotalDuration Partition}
 end
 
 % return the next notes (n tones)
-fun {NextNote N Note} Spectrum Start Index O Res in
+fun {NextNote N Note} Spectrum Start Index Oct Res in
     Spectrum = s(c1 c#1 d1 d#1 e1 f1 f#1 g1 g#1 a1 a#1 b1)
     if Note.name == c then
         if Note.sharp then Start = 2
@@ -65,20 +65,24 @@ fun {NextNote N Note} Spectrum Start Index O Res in
     end
         
     Res = {NoteToExtended Spectrum.Index}
-    O = Note.octave + {FloatToInt {IntToFloat (Start+N)}/{IntToFloat 12}}
-    {Browse O}
+    Oct = Note.octave + {FloatToInt {IntToFloat (Start+N)}/{IntToFloat 12}}
+    {Browse Oct}
     note(
         duartion:Note.duration
         instrument:Note.instrument
         name:Res.name
-        octave:O 
+        octave:Oct 
         sharp:Res.sharp
     )
 end
 
 % return the next notes (n tones)
-
-
+fun {NextChord N Chord}
+    case Chord of H|T then
+        {NextNote N H}|{NextChord N T}
+    else nil
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%EXTENDED%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -155,7 +159,17 @@ fun {Duration Seconds Partition} TD Coef in
     {Stretch Coef Partition}
 end      
 
-% Transpose [Partition] of [Semitones] semitones.    
+% Transpose [Partition] of [Semitones] semitones.
+fun {Transpose Semitones Partition}
+    case Partition of H|T then
+        if {Label H} == note then
+            {NextNote Semitones H}|{Transpose Semitones T}
+        else 
+            {NextChord Semitones H}|{Transpose Semitones T}
+        end
+    else nil
+    end
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%MAIN-FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

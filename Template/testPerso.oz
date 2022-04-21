@@ -79,9 +79,16 @@ Flat2 = {Stretch 0.5 Flat}
 {Browse 'TEST: Transpose'}
 declare
 Flat = {PartitionToTimedList [c1 c2]}
-{Browse {Transpose 3 Flat}}
+{Browse {Transpose ~1 Flat}}
 
+% NextNote
 declare
 Note = {NoteToExtended a#1}
 {Browse {NextNote 1 Note}}
+
+% NextChord
+declare
+Chord = {ChordToExtended [c1 c2 c3]}
+{Browse Chord}
+{Browse {NextChord 12 Chord}}
 
