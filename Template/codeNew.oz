@@ -30,8 +30,17 @@ fun {TotalDuration Partition}
     end
 end
 
+% returns the rounded division between A and B (A//B in python)
+fun {RoundedDiv A B}
+    if B == 0 then 0
+    else 
+        {FloatToInt {IntToFloat A}/{IntToFloat B}}
+    end
+end
+
+
 % return the next notes (n tones)
-fun {NextNote N Note} Spectrum Start Index Oct Res in
+fun {NextNote N Note} Spectrum Start Index Oct FOct Res in
     Spectrum = s(c1 c#1 d1 d#1 e1 f1 f#1 g1 g#1 a1 a#1 b1)
     if Note.name == c then
         if Note.sharp then Start = 2
@@ -59,19 +68,26 @@ fun {NextNote N Note} Spectrum Start Index Oct Res in
         Start = 12
     else skip
     end
+
     if ((Start+N) mod 12) < 0 then
         Index = 12 + ((Start+N) mod 12)
-    else Index = ((Start+N) mod 12)
+    elseif ((Start+N) mod 12) > 0 then
+        Index = ((Start+N) mod 12)
+    else Index = 12
     end
-        
+
     Res = {NoteToExtended Spectrum.Index}
-    Oct = Note.octave + {FloatToInt {IntToFloat (Start+N)}/{IntToFloat 12}}
-    {Browse Oct}
-    note(
-        duartion:Note.duration
+    Oct = Note.octave + {RoundedDiv (Start+N) 12}
+
+    if Oct > 10 orelse Oct < 0 then FOct = 0
+    else FOct = Oct
+    end
+
+    note( % build the final note to return
+        duration:Note.duration
         instrument:Note.instrument
         name:Res.name
-        octave:Oct 
+        octave:FOct 
         sharp:Res.sharp
     )
 end
@@ -129,64 +145,88 @@ fun {Drone Sound Amount}
 end
 
 % stretch the duration of [Partition] by [Factor]
-fun {Stretch Factor Partition}
-    case Partition of H|T then
-        case H of Head|Tail then
-            (note(
-                duration:(Head.duration*Factor) 
-                instrument:(Head.instrument) 
-                name:(Head.name) 
-                octave:(Head.octave) 
-                sharp:(Head.sharp)
-                )|Tail)|{Stretch Factor T}
-        else
-            note(
-                duration:(H.duration*Factor) 
-                instrument:(H.instrument) 
-                name:(H.name) 
-                octave:(H.octave) 
-                sharp:(H.sharp)
-                )|{Stretch Factor T}
+fun {Stretch Factor Partition} % Factor must be a float
+    local 
+        fun {StretchAux Factor Partition}
+            case Partition of H|T then
+                case H of Head|Tail then
+                    (note(
+                        duration:(Head.duration*Factor) 
+                        instrument:(Head.instrument) 
+                        name:(Head.name) 
+                        octave:(Head.octave) 
+                        sharp:(Head.sharp)
+                        )|Tail)|{Stretch Factor T}
+                else
+                    note(
+                        duration:(H.duration*Factor) 
+                        instrument:(H.instrument) 
+                        name:(H.name) 
+                        octave:(H.octave) 
+                        sharp:(H.sharp)
+                        )|{Stretch Factor T}
+                end
+            else nil
+            end
         end
-    else nil
+    in
+        {StretchAux Factor {PartitionToTimedList Partition}}
     end
 end
 
 % set the total duration of the [Partition] to [Seconds]
-fun {Duration Seconds Partition} TD Coef in
-    TD = {TotalDuration Partition}
-    Coef = Seconds/TD
-    {Stretch Coef Partition}
+fun {Duration Seconds Partition} TD Coef in % [Seconds] must be a float
+    local 
+        fun {DurationAux Seconds Partition}
+            TD = {TotalDuration Partition}
+            Coef = Seconds/TD
+            {Stretch Coef Partition}
+        end
+    in
+        {DurationAux Seconds {PartitionToTimedList Partition}}
+    end
 end      
 
 % Transpose [Partition] of [Semitones] semitones.
-fun {Transpose Semitones Partition}
-    case Partition of H|T then
-        if {Label H} == note then
-            {NextNote Semitones H}|{Transpose Semitones T}
-        else 
-            {NextChord Semitones H}|{Transpose Semitones T}
+fun {Transpose Semitones Partition} 
+    local 
+        fun {TransposeAux Semitones Partition}
+            case Partition of H|T then
+                case H of note(name:N octave:O sharp:S duration:D instrument:I) then
+                    {NextNote Semitones H}|{Transpose Semitones T}
+                else 
+                    {NextChord Semitones H}|{Transpose Semitones T}
+                end
+            else nil
+            end
         end
-    else nil
+    in
+        {TransposeAux Semitones {PartitionToTimedList Partition}}
     end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%MAIN-FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 fun {PartitionToTimedList P}
-    case P of H1|T1 then
-        if {Label H1} == duration then 'duration_t'
-            % don't know how to include it
-        elseif {Label H1} == stretch then 'stretch_t'
-            % don't know how to include it
-        elseif {Label H1} == drone then
-            {Concat {Drone H1.note H1.amount}{PartitionToTimedList T1}} % works
-        elseif {Label H1} == transpose then 'transpose_t'
+    case P of H|T then
+
+        case H of duration(seconds:S partition:P) then
+            {Concat {Stretch H.seconds H.partition}{PartitionToTimedList T}}
+
+        [] stretch(factor:F partition:P) then
+            {Concat {Stretch H.factor H.partition}{PartitionToTimedList T}}
+
+        [] drone(note:N amount:A) then
+            {Concat {Drone H.note H.amount}{PartitionToTimedList T}} % works
+
+        [] transpose(semitones:S partition:P) then
+            {Concat {Transpose H.semitones H.partition}{PartitionToTimedList T}}
+
         else
-            case H1 of H2|T2 then
-                {ChordToExtended H1}|{PartitionToTimedList T1}
+            if {IsList H} then
+                {ChordToExtended H}|{PartitionToTimedList T}
             else
-                {NoteToExtended H1}|{PartitionToTimedList T1}
+                {NoteToExtended H}|{PartitionToTimedList T}
             end
         end
     else nil
