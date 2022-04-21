@@ -14,12 +14,6 @@ P = {PartitionToTimedList [c3 c3 c3 [c3 c4 c5]]}
 %{Browse P}
 {Browse {TotalDuration P}} % should print 4
 
-%NextSemiTone
-{Browse 'TEST: NextSemiTone'}
-declare
-Note = {NoteToExtended a#1}
-{Browse {NextSemiTone {NextSemiTone Note}}}
-
 % NoteToExtended
 {Browse 'TEST: NoteToExtended'}
 declare
