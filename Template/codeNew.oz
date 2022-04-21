@@ -76,6 +76,8 @@ fun {NextNote N Note} Spectrum Start Index O Res in
     )
 end
 
+% return the next notes (n tones)
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%EXTENDED%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

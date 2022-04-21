@@ -20,34 +20,6 @@ declare
 Note = {NoteToExtended a#1}
 {Browse {NextSemiTone {NextSemiTone Note}}}
 
-%PreviousSemiTone
-{Browse 'TEST: PreviousSemiTone'}
-declare 
-Note = {NoteToExtended f3}
-{Browse {PreviousSemiTone Note}}
-
-%TransposeNote
-{Browse 'TEST: TransposeNote'}
-declare
-Note = {NoteToExtended c1}
-{Browse {TransposeNote ~1 Note}}
-{Browse {TransposeNote 1 Note}}
-
-%TransposeChord
-{Browse 'TEST: TransposeChord'}
-declare 
-Chord = {ChordToExtended [c1 c1]}
-{Browse Chord}
-{Browse {TransposeChord 1 Chord}} % transpose [Chord] high
-{Browse {TransposeChord ~1 Chord}} % transpose [Chord] low
-
-%TransposeOnce
-{Browse 'TEST: TransposeOnce'}
-declare
-Flat = {PartitionToTimedList [c1 c2]}
-{Browse {TransposeOnce ~1 Flat}} % should print [b0 b1]
-{Browse {TransposeOnce 1 Flat}} % should print [c#1 c#2]
-
 % NoteToExtended
 {Browse 'TEST: NoteToExtended'}
 declare
@@ -55,7 +27,6 @@ Note = {NoteToExtended c3}
 Note2 = {NoteToExtended Note}
 {Browse Note} % should print "note(duration:1 instrument:none name:c octave:3 sharp:false)"
 {Browse Note2} % should print "note(duration:1 instrument:none name:c octave:3 sharp:false)"
-
 
 % ChordToExtended
 {Browse 'TEST: ChordToExtended'}
@@ -100,6 +71,9 @@ Flat = {PartitionToTimedList [c1 c2]}
 declare 
 Flat = {PartitionToTimedList [c1 c2]}
 {Browse {Stretch 0.5 Flat}} % each note should have a duration of 0.5 seconds
+Flat2 = {Stretch 0.5 Flat}
+{Browse {Stretch 3.0 Flat2}}
+
 
 % Transpose Transistion
 {Browse 'TEST: Transpose'}
@@ -108,6 +82,6 @@ Flat = {PartitionToTimedList [c1 c2]}
 {Browse {Transpose 3 Flat}}
 
 declare
-Note = {NoteToExtended c#3}
-{Browse {NextNote ~12 note(duration:2 instrument:violon name:c octave:3 sharp:false)}}
+Note = {NoteToExtended a#1}
+{Browse {NextNote 1 Note}}
 
