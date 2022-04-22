@@ -1,5 +1,7 @@
 \insert 'codeNew.oz'
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%UTILS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 % Concat
 {Browse 'TEST: Concat'}
 declare
@@ -20,6 +22,19 @@ A = ~14
 B = 12
 {Browse {RoundedDiv A B}} % should print 1
 
+% NextNote
+declare
+Note = {NoteToExtended c#1}
+{Browse {NextNote 123 Note}}
+
+% NextChord
+declare
+Chord = {ChordToExtended [c1 c2 c3]}
+%{Browse Chord}
+{Browse {NextChord ~12 Chord}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%TO EXTENDED%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 % NoteToExtended
 {Browse 'TEST: NoteToExtended'}
 declare
@@ -37,18 +52,7 @@ Chord2 = {ChordToExtended [c3 Note c3]}
 {Browse Chord} % should print [note(duration:1 instrument:none name:c octave:3 sharp:false) ... 3 times]
 {Browse Chord2} % should print [note(duration:1 instrument:none name:c octave:3 sharp:false) ... 3 times]
 
-% PartitionToTimedList
-{Browse 'TEST: PartitiontToTimedList'}
-declare
-Note = {NoteToExtended c3}
-Chord = {ChordToExtended [c3 c3 c3]}
-Flat = {PartitionToTimedList [Note Chord c4 [c4 Note]]}
-{Browse Flat} 
-
-declare
-Transition = [transpose(semitones:13 partition:[c1 c2])]
-%{Browse Transition}
-{Browse {PartitionToTimedList Transition}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%TRANSITIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Drone Transition
 {Browse 'TEST: Drone'}
@@ -59,37 +63,42 @@ Flat = {PartitionToTimedList [drone(note:c3 amount:2) c4 drone(note:[c5 c5 c5] a
 
 % Duration Transition
 {Browse 'TEST: Duration'}
-{Browse {Duration 12.0 [c1 c2]}} % each note should have a duration of 6 seconds
+{Browse {Duration 4.0 [c1 c3]}} % each note should have a duration of 6 seconds
 
 % Stretch Transition
 {Browse 'TEST: Stretch'}
 declare 
-{Browse {Stretch 0.5 [c1 c2]}} % each note should have a duration of 0.5 seconds
+{Browse {Stretch 3.0 [c1 c2]}} % each note should have a duration of 0.5 seconds
 Flat2 = {Stretch 0.5 Flat}
 {Browse {Stretch 3.0 Flat2}}
 
 
 % Transpose Transistion
 {Browse 'TEST: Transpose'}
-declare
-{Browse {Transpose 12 [c1 c2]}}
+{Browse {Stretch 2.0 {Transpose 12 [c1 c2]}}}
 
-% NextNote
-declare
-Note = {NoteToExtended c#1}
-{Browse {NextNote 123 Note}}
+%%%%%%%%%%%%%%%%%%%% GLOBAL TEST(S) FOR PARTITION TO TIMED LIST %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% NextChord
-declare
-Chord = {ChordToExtended [c1 c2 c3]}
-%{Browse Chord}
-{Browse {NextChord ~12 Chord}}
+% only notes
 
-%%%%%%%%%%%%%%%%%%%% GLOBAL TEST FOR PARTITION TO TIMED LIST %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+{Browse 'Notes only'}
+{Browse {PartitionToTimedList [c1 c2]}}
 
-declare
-T1 = duration(seconds:3.0 partition:[c1 c1]) 
-T2 = stretch(factor:2 partition [d2 d2])
-T3 = drone(amount: 3 note:e3)
-T4 = transpose(semitones:12 [f4])
-{Browse {PartitionToTimedList [T2]}}
+{Browse 'Notes and Chords'}
+{Browse {PartitionToTimedList [c1 c2 [c1 c4]]}}
+
+{Browse 'Drone transformation'}
+{Browse {PartitionToTimedList [drone(amount:4 note:c1)]}}
+
+{Browse 'Duration transformation'}
+{Browse {PartitionToTimedList [duration(seconds:4.0 partition:[c1 c3])]}}
+
+{Browse 'Stretch transformation'}
+{Browse {PartitionToTimedList [stretch(factor:2.0 partition:[d3 d7])]}}
+
+{Browse 'Transpose transformation'}
+{Browse {PartitionToTimedList [c1 transpose(semitones:12 partition:[c2 c4])]}}
+
+{Browse 'Complex case'}
+{Browse {PartitionToTimedList [c1 transpose(semitones:12 partition:([stretch(factor:2.0 partition:([duration(seconds:4.0 partition:([drone(amount:4 note:c1)]))]))]))]}}
+
