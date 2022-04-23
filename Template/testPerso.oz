@@ -33,6 +33,19 @@ Chord = {ChordToExtended [c1 c2 c3]}
 %{Browse Chord}
 {Browse {NextChord ~12 Chord}}
 
+% GetPos
+{Browse {GetPos {NoteToExtended c0}}} % should print 1
+
+%GetH
+{Browse {GetH {NoteToExtended a4}}} % should print 0
+
+%GetFreq
+{Browse {GetFreq {NoteToExtended c4}}}
+{Browse {GetFreq {NoteToExtended c5}}}
+
+% Sample
+{Browse {Sample {NoteToExtended a4} 0.0}}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%TO EXTENDED%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % NoteToExtended

@@ -1,9 +1,14 @@
 
 declare
 
+%%%%%%%%%%%%%%%%%%%%VARIABLES%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+PI = 3.14159265358979
+U = 44100.0
+
 %%%%%%%%%%%%%%%%%%%%%%%%UTILS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Append [B] to [A]
+% Appends [B] to [A]
 fun {Concat A B}
     case A of H|T then
         H|{Concat T B}
@@ -12,7 +17,7 @@ fun {Concat A B}
     end
 end
 
-% return the total duration of [Partition]
+% returns the total duration of [Partition]
 fun {TotalDuration Partition}
     local
         fun {TotalDurationAux Partition Acc} 
@@ -38,36 +43,40 @@ fun {RoundedDiv A B}
     end
 end
 
-
-% return the next notes (n tones)
-fun {NextNote N Note} Spectrum Start Index Oct FOct Res in
-    Spectrum = s(c1 c#1 d1 d#1 e1 f1 f#1 g1 g#1 a1 a#1 b1)
+% returns the postition of a Note (Ex pos(c0) ==> 0)
+fun {GetPos Note}
     if Note.name == c then
-        if Note.sharp then Start = 2
-        else Start = 1
+        if Note.sharp then 2
+        else 1
         end
     elseif Note.name == d then
-        if Note.sharp then Start = 4
-        else Start = 3
+        if Note.sharp then 4
+        else 3
         end
-    elseif Note.name == e then
-        Start = 5
+    elseif Note.name == e then 5
     elseif Note.name == f then
-        if Note.sharp then Start = 7
-        else Start = 6
+        if Note.sharp then 7
+        else 6
         end
     elseif Note.name == g then
-        if Note.sharp then Start = 9
-        else Start = 8
+        if Note.sharp then 9
+        else 8
         end
     elseif Note.name == a then
-        if Note.sharp then Start = 11
-        else Start = 10
+        if Note.sharp then 11
+        else 10
         end
-    elseif Note.name == b then
-        Start = 12
-    else skip
+    elseif Note.name == b then 12
+    else ~1
     end
+end
+
+
+
+% returns the next notes (n tones)
+fun {NextNote N Note} Spectrum Start Index Oct FOct Res in
+    Spectrum = s(c1 c#1 d1 d#1 e1 f1 f#1 g1 g#1 a1 a#1 b1)
+    Start = {GetPos Note}
 
     if ((Start+N) mod 12) < 0 then
         Index = 12 + ((Start+N) mod 12)
@@ -83,7 +92,7 @@ fun {NextNote N Note} Spectrum Start Index Oct FOct Res in
     else FOct = Oct
     end
 
-    note( % build the final note to return
+    note( % builds the final note to return
         duration:Note.duration
         instrument:Note.instrument
         name:Res.name
@@ -92,12 +101,32 @@ fun {NextNote N Note} Spectrum Start Index Oct FOct Res in
     )
 end
 
-% return the next notes (n tones)
+% returns the next notes (n tones)
 fun {NextChord N Chord}
     case Chord of H|T then
         {NextNote N H}|{NextChord N T}
     else nil
     end
+end
+
+% returns the height of a note (considering A4 as 0)
+fun {GetH Note} Pos in
+    Pos = {GetPos Note} - 1
+    {IntToFloat (Pos + (Note.octave*12) - 57)}
+end
+
+% returns the frequence of a note (Ex: GetFreq(a4) = 440)
+fun {GetFreq Note} Power H Final in
+    H = {GetH Note}
+    Power = {Pow 2.0 H/12.0}
+    Final = Power*440.0
+    Final
+end
+
+% return a sample following formula n°2
+
+fun {Sample F I}
+    0.5*{Float.sin (2.0*PI*I/U)}
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%EXTENDED%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -130,7 +159,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%TRANSITIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% add [Amount] times the [Sound] to the partition
+% adds [Amount] times the [Sound] to the partition
 fun {Drone Sound Amount}
     if Amount == 0 then nil
     else
@@ -144,7 +173,7 @@ fun {Drone Sound Amount}
     end
 end
 
-% stretch the duration of [Partition] by [Factor]
+% stretches the duration of [Partition] by [Factor]
 fun {Stretch Factor Partition} % Factor must be a float
     local 
         fun {StretchAux Factor Partition}
@@ -174,7 +203,7 @@ fun {Stretch Factor Partition} % Factor must be a float
     end
 end
 
-% set the total duration of the [Partition] to [Seconds]
+% sets the total duration of the [Partition] to [Seconds]
 fun {Duration Seconds Partition} TD Coef in % [Seconds] must be a float
     local 
         fun {DurationAux Seconds Partition}
@@ -187,7 +216,7 @@ fun {Duration Seconds Partition} TD Coef in % [Seconds] must be a float
     end
 end      
 
-% Transpose [Partition] of [Semitones] semitones.
+% Transposes [Partition] of [Semitones] semitones.
 fun {Transpose Semitones Partition} 
     local 
         fun {TransposeAux Semitones Partition}
