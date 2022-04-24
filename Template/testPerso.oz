@@ -115,3 +115,25 @@ Flat2 = {Stretch 0.5 Flat}
 {Browse 'Complex case'}
 {Browse {PartitionToTimedList [c1 transpose(semitones:12 partition:([stretch(factor:2.0 partition:([duration(seconds:4.0 partition:([drone(amount:4 note:c1)]))]))]))]}}
 
+declare
+
+% returns a list of points associated to a note and its duration
+fun {GetPoints Note Freq I}
+    if I == ({IntToFloat Note.duration}*U) then
+        nil
+    else
+        {Sample Freq I}|{GetPoints Note Freq I+1.0}
+    end
+end
+
+Note = {NoteToExtended c2}
+%{Browse {GetFreq Note}}
+
+{Browse {IntToFloat Note.duration}}
+
+{Browse Note.duration*44100.0}
+{Browse {GetPoints Note {GetFreq Note} 1.0}}
+
+for I in {PartMix PartitionToTimedList [c1 c2]} do
+    {Browse I}
+end

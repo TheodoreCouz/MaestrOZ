@@ -124,7 +124,6 @@ fun {GetFreq Note} Power H Final in
 end
 
 % return a sample following formula n°2
-
 fun {Sample F I}
     0.5*{Float.sin (2.0*PI*I/U)}
 end
@@ -270,6 +269,29 @@ end
 
 %Fonction qui échantillone la musique 
 fun {PartMix P2T Music}
-    local MusicExtended ListSample in
+    local 
+        MusicExtended 
+
+        % returns a list of points associated to a note and its duration
+        fun {GetPoints Note Freq I}
+            if I == (Note.duration*U) then
+                nil
+            else
+                {Sample Freq I}|{GetPoints Note Freq I+1.0}
+            end
+        end
+
+        % applies GetPoints to each element of [MusicEx]
+        fun {PartMixAux MusicEx}
+            case MusicEx of H|T then
+                {Concat {GetPoints H {GetFreq H} 1.0} {PartMixAux T}}
+            else nil
+            end
+        end
+
+    in
         MusicExtended = {P2T Music}
+        {PartMixAux MusicExtended}
+    end
+end
         
