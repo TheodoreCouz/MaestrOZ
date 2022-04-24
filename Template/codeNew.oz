@@ -267,3 +267,9 @@ fun {Mix P2T Music}
     %{Project.readFile CWD#'wave/animals/cow.wav'}
     1
 end
+
+%Fonction qui échantillone la musique 
+fun {PartMix P2T Music}
+    local MusicExtended ListSample in
+        MusicExtended = {P2T Music}
+        
