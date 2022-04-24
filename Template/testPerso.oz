@@ -137,3 +137,5 @@ Note = {NoteToExtended c2}
 for I in {PartMix PartitionToTimedList [c1 c2]} do
     {Browse I}
 end
+
+{Browse {Project.run Mix PartitionToTimedList [c4 d4 e4 f4] 'out.wav'}}
