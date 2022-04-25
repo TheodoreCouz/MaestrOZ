@@ -46,6 +46,12 @@ Chord = {ChordToExtended [c1 c2 c3]}
 % Sample
 {Browse {Sample {NoteToExtended a4} 0.0}}
 
+% MultList
+{Browse {MultList [1.0 2.0 3.0]}}
+
+% MergeList
+{Browse {MergeList [1.0 1.0 1.0] [1.0 1.0]}}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%TO EXTENDED%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % NoteToExtended
@@ -139,3 +145,5 @@ for I in {PartMix PartitionToTimedList [c1 c2]} do
 end
 
 {Browse {Project.run Mix PartitionToTimedList [c4 d4 e4 f4] 'out.wav'}}
+
+{Browse {List.length [1 2 3]}}

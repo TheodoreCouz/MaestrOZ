@@ -17,6 +17,8 @@ local
     GetH
     GetFreq
     Sample
+    MultList
+    MergeList
 
     % extended
     NoteToExtended
@@ -106,8 +108,6 @@ in
         end
     end
 
-
-
     % returns the next notes (n tones)
     fun {NextNote N Note} Spectrum Start Index Oct FOct Res in
         Spectrum = s(c1 c#1 d1 d#1 e1 f1 f#1 g1 g#1 a1 a#1 b1)
@@ -160,8 +160,37 @@ in
 
     % return a sample following formula n°2
     fun {Sample F I}
-        0.5*{Float.sin (2.0*PI*I/U)}
+        0.5*{Float.sin (2.0*PI*F*(I/U))}
     end
+
+    % Multiplies each element of a list 
+    fun {MultList L} MultListAux in
+        fun {MultListAux L Acc}
+            case L of H|T then
+                {MultListAux T Acc*H}
+            else Acc
+            end
+        end
+
+        {MultListAux L 1.0}
+    end
+
+    % Merges two lists
+    fun {MergeList A B}
+        case A#B of nil#nil then
+            nil
+        else
+            case A of nil then 
+                0.0 + B.1|{MergeList nil B.2}
+            else 
+                case B of nil then 0.0 + A.1|{MergeList A.2 nil}
+                else
+                    A.1 + B.1|{MergeList A.2 B.2}
+                end
+            end
+        end
+    end
+
 
     %%%%%%%%%%%%%%%%%%%%%%%%EXTENDED%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -210,16 +239,24 @@ in
     % stretches the duration of [Partition] by [Factor]
     fun {Stretch Factor Partition} % Factor must be a float
         local 
+
+            fun {StretchChord Factor Chord}
+                case Chord of H|T then 
+                    note(
+                        duration:(H.duration*Factor) 
+                        instrument:(H.instrument) 
+                        name:(H.name) 
+                        octave:(H.octave) 
+                        sharp:(H.sharp)
+                        )| {StretchChord Factor T}
+                else nil
+                end
+            end
+
             fun {StretchAux Factor Partition}
                 case Partition of H|T then
                     case H of Head|Tail then
-                        (note(
-                            duration:(Head.duration*Factor) 
-                            instrument:(Head.instrument) 
-                            name:(Head.name) 
-                            octave:(Head.octave) 
-                            sharp:(Head.sharp)
-                            )|Tail)|{Stretch Factor T}
+                        {StretchChord Factor H}|{Stretch Factor T}
                     else
                         note(
                             duration:(H.duration*Factor) 
@@ -284,6 +321,8 @@ in
 
             [] transpose(semitones:S partition:P) then
                 {Concat {Transpose H.semitones H.partition}{PartitionToTimedList T}}
+            [] silence(duration:D) then
+                H|{PartitionToTimedList T}
 
             else
                 if {IsList H} then
@@ -308,18 +347,41 @@ in
             MusicExtended 
 
             % returns a list of points associated to a note and its duration
-            fun {GetPoints Note Freq I}
-                if I == (Note.duration*U) then
+            fun {GetPoints Dur Freq I}
+                if I == (Dur*U) then
                     nil
                 else
-                    {Sample Freq I}|{GetPoints Note Freq I+1.0}
+                    {Sample Freq I}|{GetPoints Dur Freq I+1.0}
                 end
             end
 
+            % transforms Note (in order to use in map fun)  
+            fun {Aux Note} {GetPoints Note.duration {GetFreq Note} 1.0} end
+
+            % treats chord
+            fun {MixChord Chord} Len Divide Samples in
+                Len = {IntToFloat {List.length Chord}} % number of notes in Chord
+
+                % Divides each element of [L] by [Factor ]
+                fun {Divide L}
+                    L/Len
+                end
+
+                Samples = {Map Chord Aux}
+                {Map {FoldR Samples MergeList nil} Divide}
+            end
+            
             % applies GetPoints to each element of [MusicEx]
             fun {PartMixAux MusicEx}
                 case MusicEx of H|T then
-                    {Concat {GetPoints H {GetFreq H} 1.0} {PartMixAux T}}
+                    case H of note(name:N octave:O sharp:S duration:D instrument:I) then
+                        {Concat {Aux H} {PartMixAux T}}
+                    [] silence(duration:D) then 
+                        {Concat {GetPoints H.duration 0.0 0.0} {PartMixAux T}}
+                    [] H1|T1 then % is a chord
+                        {Concat {MixChord H1} {PartMixAux T}}
+                    else nil
+                    end
                 else nil
                 end
             end
@@ -329,6 +391,6 @@ in
             {PartMixAux MusicExtended}
         end
     end 
-    {Browse 1}
-    {Browse {Project.run PartMix PartitionToTimedList [note(duration:10.0 name:c octave:4 instrument:none sharp:false)] 'out.wav'}}
+    % MergeList
+    {Browse {Project.run PartMix PartitionToTimedList [[c6]] 'out.wav'}}
 end
