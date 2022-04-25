@@ -2,7 +2,7 @@ local
 
     % See project statement for API details.
     % !!! Please remove CWD identifier when submitting your project !!!
-    CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' % Put here the **absolute** path to the project files
+    CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % Put here the **absolute** path to the project files
     [Project] = {Link [CWD#'Project2022.ozf']}
 
     %%%%%%%%%%%%%%%%%%%FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -379,7 +379,7 @@ in
                     [] silence(duration:D) then 
                         {Concat {GetPoints H.duration 0.0 0.0} {PartMixAux T}}
                     [] H1|T1 then % is a chord
-                        {Concat {MixChord H1} {PartMixAux T}}
+                        {Concat {MixChord H} {PartMixAux T}}
                     else nil
                     end
                 else nil
@@ -392,5 +392,5 @@ in
         end
     end 
     % MergeList
-    {Browse {Project.run PartMix PartitionToTimedList [[c6]] 'out.wav'}}
+    {Browse {Project.run PartMix PartitionToTimedList [stretch(factor:5.0 partition:[[c4 e4 g4]])] 'out.wav'}}
 end
