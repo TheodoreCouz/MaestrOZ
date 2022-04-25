@@ -2,7 +2,7 @@ local
 
     % See project statement for API details.
     % !!! Please remove CWD identifier when submitting your project !!!
-    CWD = '/home/aloka/Unif/BAC2/Q2/Para/MaestrOZ/MaestrOZ/Template/' % Put here the **absolute** path to the project files
+    CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' % Put here the **absolute** path to the project files
     [Project] = {Link [CWD#'Project2022.ozf']}
 
     %%%%%%%%%%%%%%%%%%%FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -330,6 +330,5 @@ in
         end
     end 
     {Browse 1}
-    {Browse {Project.run Mix PartitionToTimedList [c4 d4 e4 f4] 'out.wav'}}
+    {Browse {Project.run PartMix PartitionToTimedList [note(duration:10.0 name:c octave:4 instrument:none sharp:false)] 'out.wav'}}
 end
-            
