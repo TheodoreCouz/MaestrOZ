@@ -19,7 +19,7 @@ local
     Sample
     MultList
     MergeList
-    MutlEach
+    MultEach
 
     % extended
     NoteToExtended
@@ -179,8 +179,8 @@ in
         {MultListAux L 1.0}
     end
 
-    % mutliplies each element of a list
-    fun {MutlEach L Factor}
+    % mutltiplies each element of a list
+    fun {MultEach L Factor}
         case L of H|T then 
             H*Factor|{MultEach T Factor}
         else nil 
@@ -354,14 +354,14 @@ in
     end
 
     fun {MergeAux Music}
-        case Music of Factor#Part then {MultEach {PartMix Part} Factor}
+        case Music of Factor#Part then {MultEach {PartMix PartitionToTimedList Part} Factor}
         else nil
         end
     end
 
     % merge function
     fun {MixMerge ToMerge}
-        {FoldR {Map ToMerge MergeAux} MergeList}
+        {FoldR {Map ToMerge MergeAux} MergeList nil}
     end
 
 
@@ -405,7 +405,7 @@ in
                     [] H1|T1 then % is a chord
                         case H1 of note(name:N octave:O sharp:S duration:D instrument:I) then
                             {Concat {MixChord H} {PartMixAux T}}
-                        case H1 of Factor#Music then
+                        [] Factor#Music then
                             {Concat {MixMerge H} {PartMixAux T}}
                         else nil
                         end
@@ -421,6 +421,6 @@ in
         end
     end 
     % MergeList
-    %{Browse {Project.run PartMix PartitionToTimedList [0.4#[c3 c5] 0.6#[d7 e3]] 'out.wav'}}
-    {Browse {MultEach [1.2 3.5 3.2] 2.0}}
+    {Browse {Project.run PartMix PartitionToTimedList [0.4#[c3 c5] 0.6#[d7 e3]] 'out.wav'}}
+    %{Browse {MultEach [1.2 3.5 3.2] 2.0}}
 end
