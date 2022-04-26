@@ -2,7 +2,7 @@ local
 
     % See project statement for API details.
     % !!! Please remove CWD identifier when submitting your project !!!
-    CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % Put here the **absolute** path to the project files
+    CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' % Put here the **absolute** path to the project files
     [Project] = {Link [CWD#'Project2022.ozf']}
 
     %%%%%%%%%%%%%%%%%%%FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -19,6 +19,7 @@ local
     Sample
     MultList
     MergeList
+    MutlEach
 
     % extended
     NoteToExtended
@@ -34,6 +35,9 @@ local
     PartitionToTimedList
     Mix
     PartMix
+
+    MergeAux
+    MixMerge
 
     %%%%%%%%%%%%%%%%%%%%VARIABLES%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -163,7 +167,7 @@ in
         0.5*{Float.sin (2.0*PI*F*(I/U))}
     end
 
-    % Multiplies each element of a list 
+    % Multiplies each element of a list between them
     fun {MultList L} MultListAux in
         fun {MultListAux L Acc}
             case L of H|T then
@@ -173,6 +177,14 @@ in
         end
 
         {MultListAux L 1.0}
+    end
+
+    % mutliplies each element of a list
+    fun {MutlEach L Factor}
+        case L of H|T then 
+            H*Factor|{MultEach T Factor}
+        else nil 
+        end
     end
 
     % Merges two lists
@@ -310,17 +322,17 @@ in
     fun {PartitionToTimedList P}
         case P of H|T then
 
-            case H of duration(seconds:S partition:P) then
-                {Concat {Duration H.seconds H.partition}{PartitionToTimedList T}}
+            case H of duration(seconds:S P) then
+                {Concat {Duration H.seconds H.1}{PartitionToTimedList T}}
 
             [] stretch(factor:F P) then
                 {Concat {Stretch H.factor H.1}{PartitionToTimedList T}}
 
             [] drone(note:N amount:A) then
-                {Concat {Drone H.note H.amount}{PartitionToTimedList T}} % works
+                {Concat {Drone H.note H.amount}{PartitionToTimedList T}}
 
-            [] transpose(semitones:S partition:P) then
-                {Concat {Transpose H.semitones H.partition}{PartitionToTimedList T}}
+            [] transpose(semitones:S P) then
+                {Concat {Transpose H.semitones H.1}{PartitionToTimedList T}}
             [] silence(duration:D) then
                 H|{PartitionToTimedList T}
 
@@ -340,6 +352,18 @@ in
         %{Project.readFile CWD#'wave/animals/cow.wav'}
         1
     end
+
+    fun {MergeAux Music}
+        case Music of Factor#Part then {MultEach Part Factor}
+        else nil
+        end
+    end
+
+    % merge function
+    fun {MixMerge ToMerge}
+        {FoldR {Map ToMerge MergeAux} MergeList}
+    end
+
 
     %Fonction qui échantillone la musique 
     fun {PartMix P2T Music}
@@ -379,7 +403,12 @@ in
                     [] silence(duration:D) then 
                         {Concat {GetPoints H.duration 0.0 0.0} {PartMixAux T}}
                     [] H1|T1 then % is a chord
-                        {Concat {MixChord H} {PartMixAux T}}
+                        case H1 of note(name:N octave:O sharp:S duration:D instrument:I) then
+                            {Concat {MixChord H} {PartMixAux T}}
+                        case H1 of Factor#Music then
+                            {Concat {MixMerge H} {PartMixAux T}}
+                        else nil
+                        end
                     else nil
                     end
                 else nil
@@ -392,5 +421,5 @@ in
         end
     end 
     % MergeList
-    {Browse {Project.run PartMix PartitionToTimedList Music.partition 'out.wav'}}
+    {Browse {Project.run PartMix PartitionToTimedList [0.4#[c3 c5] 0.6#[d7 e3]] 'out.wav'}}
 end
