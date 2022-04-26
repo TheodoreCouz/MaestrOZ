@@ -354,13 +354,10 @@ in
     % merge function
     fun {MixMerge P2T ToMerge}
         fun {MergeAux Music}
-            case Music of Factor#Part then 
-                {MultEach {PartMix P2T Part.1} Factor}
-            else nil
-            end
+            case Music of Factor#Part then {MultEach {PartMix P2T Part.1} Factor}
+            else nil end
         end
-    in
-        {FoldR {Map ToMerge MergeAux} MergeList nil}
+    in {FoldR {Map ToMerge MergeAux} MergeList nil}
     end
 
     %Fonction qui échantillone la musique 
@@ -429,5 +426,5 @@ in
 
 
     % MergeList
-    {Browse {Project.run Mix PartitionToTimedList [merge([0.4#partition([c4]) 0.6#partition([d4])])] 'out.wav'}}
+    {Browse {Project.run Mix PartitionToTimedList [merge([0.4#partition([stretch(factor:120.0 [c4 e4 f4])]) 0.6#partition([d6 c3])])] 'out.wav'}}
 end
