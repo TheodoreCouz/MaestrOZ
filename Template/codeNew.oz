@@ -313,8 +313,8 @@ in
             case H of duration(seconds:S partition:P) then
                 {Concat {Duration H.seconds H.partition}{PartitionToTimedList T}}
 
-            [] stretch(factor:F partition:P) then
-                {Concat {Stretch H.factor H.partition}{PartitionToTimedList T}}
+            [] stretch(factor:F P) then
+                {Concat {Stretch H.factor H.1}{PartitionToTimedList T}}
 
             [] drone(note:N amount:A) then
                 {Concat {Drone H.note H.amount}{PartitionToTimedList T}} % works
@@ -392,5 +392,5 @@ in
         end
     end 
     % MergeList
-    {Browse {Project.run PartMix PartitionToTimedList [stretch(factor:5.0 partition:[[c4 e4 g4]])] 'out.wav'}}
+    {Browse {Project.run PartMix PartitionToTimedList Music.partition 'out.wav'}}
 end
