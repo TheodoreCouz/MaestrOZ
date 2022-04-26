@@ -43,7 +43,7 @@ local
 
     PI = 3.14159265358979
     U = 44100.0
-    Music = {Project.load CWD#'joy.dj.oz'}
+    Music = {Project.load CWD#'mii.dj.oz'}
 
 in
 
@@ -426,5 +426,5 @@ in
 
 
     % MergeList
-    {Browse {Project.run Mix PartitionToTimedList [merge([0.4#partition([stretch(factor:120.0 [c4 e4 f4])]) 0.6#partition([d6 c3])])] 'out.wav'}}
+    {Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
 end
