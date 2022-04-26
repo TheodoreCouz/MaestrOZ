@@ -354,7 +354,7 @@ in
     end
 
     fun {MergeAux Music}
-        case Music of Factor#Part then {MultEach Part Factor}
+        case Music of Factor#Part then {MultEach {PartMix Part} Factor}
         else nil
         end
     end
@@ -421,5 +421,6 @@ in
         end
     end 
     % MergeList
-    {Browse {Project.run PartMix PartitionToTimedList [0.4#[c3 c5] 0.6#[d7 e3]] 'out.wav'}}
+    %{Browse {Project.run PartMix PartitionToTimedList [0.4#[c3 c5] 0.6#[d7 e3]] 'out.wav'}}
+    {Browse {MultEach [1.2 3.5 3.2] 2.0}}
 end
