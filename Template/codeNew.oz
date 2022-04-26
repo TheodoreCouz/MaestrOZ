@@ -442,7 +442,7 @@ in
 
 
     % MergeList
-    {Browse {Project.run Mix PartitionToTimedList [reverse([Music])] 'out.wav'}}
+    {Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
     %{Browse {Project.run Mix PartitionToTimedList [merge([0.4#partition([stretch(factor:120.0 [c4 e4 f4])]) 0.6#partition([d6 c3])])] 'out.wav'}}
     %{Browse {Project.run Mix PartitionToTimedList [repeat(amount:3.0 [partition([a4 d4])])] 'out.wav'}}
     %{Browse {Project.run Mix PartitionToTimedList [partition([c4 d4 e4 f4])] 'out.wav'}}
