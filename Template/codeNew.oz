@@ -2,7 +2,7 @@ local
 
     % See project statement for API details.
     % !!! Please remove CWD identifier when submitting your project !!!
-    CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' % Put here the **absolute** path to the project files
+    CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % Put here the **absolute** path to the project files
     [Project] = {Link [CWD#'Project2022.ozf']}
 
     %%%%%%%%%%%%%%%%%%%FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -20,6 +20,7 @@ local
     MultList
     MergeList
     MultEach
+    MixRepeat
 
     % extended
     NoteToExtended
@@ -413,6 +414,15 @@ in
         end
     end 
 
+    fun {MixRepeat Amount Music}
+        if Amount == 1.0 then
+          Music
+        else
+          {Concat Music {MixRepeat (Amount - 1.0) Music}}
+        end
+    end
+
+
     fun {Mix P2T Music}
         case Music of H|T then
             case H of merge(M) then
@@ -420,11 +430,15 @@ in
                 {Concat {MixMerge P2T H.1} {Mix P2T T}}
             [] partition(P) then
                 {Concat {PartMix P2T H.1} {Mix P2T T}}
+            [] repeat(amount:Amount Muse) then
+                {Concat {MixRepeat Amount {Mix P2T H.1}} {Mix P2T T}}
             else nil end
         else nil end
     end
 
 
     % MergeList
-    {Browse {Project.run Mix PartitionToTimedList [merge([0.4#partition([stretch(factor:120.0 [c4 e4 f4])]) 0.6#partition([d6 c3])])] 'out.wav'}}
+    %{Browse {Project.run Mix PartitionToTimedList [merge([0.4#partition([stretch(factor:120.0 [c4 e4 f4])]) 0.6#partition([d6 c3])])] 'out.wav'}}
+    {Browse {Project.run Mix PartitionToTimedList [repeat(amount:3.0 [partition([a4 d4])])] 'out.wav'}}
+    %{Browse {Project.run Mix PartitionToTimedList [partition([c4 d4 e4 f4])] 'out.wav'}}
 end

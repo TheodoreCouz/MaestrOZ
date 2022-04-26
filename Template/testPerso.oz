@@ -148,10 +148,4 @@ end
 
 {Browse {List.length [1 2 3]}}
 
-fun {MixRepeat Amount Music}
-    if Amount == 1 
-      nil
-    else
-      {Append Music {MixRepeat Amount - 1 Music}}
-    end
-end
+
