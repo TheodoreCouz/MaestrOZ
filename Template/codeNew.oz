@@ -269,6 +269,8 @@ in
                 case Partition of H|T then
                     case H of Head|Tail then
                         {StretchChord Factor H}|{Stretch Factor T}
+                    [] silence(duration:D) then
+                        silence(duration:Factor*H.duration)|{Stretch Factor T}
                     else
                         note(
                             duration:(H.duration*Factor) 
@@ -347,20 +349,17 @@ in
         end
     end
 
-    fun {Mix P2T Music}
-        % TODO
-        %{Project.readFile CWD#'wave/animals/cow.wav'}
-        1
-    end
 
-    fun {MergeAux Music}
-        case Music of Factor#Part then {MultEach {PartMix PartitionToTimedList Part} Factor}
-        else nil
-        end
-    end
 
     % merge function
-    fun {MixMerge ToMerge}
+    fun {MixMerge P2T ToMerge}
+        fun {MergeAux Music}
+            case Music of Factor#Part then 
+                {MultEach {PartMix P2T Part} Factor}
+            else nil
+            end
+        end
+    in
         {FoldR {Map ToMerge MergeAux} MergeList nil}
     end
 
@@ -405,8 +404,6 @@ in
                     [] H1|T1 then % is a chord
                         case H1 of note(name:N octave:O sharp:S duration:D instrument:I) then
                             {Concat {MixChord H} {PartMixAux T}}
-                        [] Factor#Music then
-                            {Concat {MixMerge H} {PartMixAux T}}
                         else nil
                         end
                     else nil
@@ -420,7 +417,18 @@ in
             {PartMixAux MusicExtended}
         end
     end 
+
+    fun {Mix P2T Music}
+        case Music of H|T then
+            case H of merge(M) then
+                {Concat {MixMerge P2T H.1} {Mix P2T T}}
+            [] partition(P) then
+                {Concat {PartMix P2T H.1} {Mix P2T T}}
+            else nil end
+        else nil end
+    end
+
+
     % MergeList
-    {Browse {Project.run PartMix PartitionToTimedList [0.4#[c3 c5] 0.6#[d7 e3]] 'out.wav'}}
-    %{Browse {MultEach [1.2 3.5 3.2] 2.0}}
+    {Browse {Project.run Mix PartitionToTimedList [merge([0.4#partition([c4]) 0.6#partition([d4])])] 'out.wav'}}
 end
