@@ -147,3 +147,11 @@ end
 {Browse {Project.run Mix PartitionToTimedList [c4 d4 e4 f4] 'out.wav'}}
 
 {Browse {List.length [1 2 3]}}
+
+fun {MixRepeat Amount Music}
+    if Amount == 1 
+      nil
+    else
+      {Append Music {MixRepeat Amount - 1 Music}}
+    end
+endgfit 
