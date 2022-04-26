@@ -154,4 +154,4 @@ fun {MixRepeat Amount Music}
     else
       {Append Music {MixRepeat Amount - 1 Music}}
     end
-endgfit 
+end

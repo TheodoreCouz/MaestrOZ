@@ -355,14 +355,13 @@ in
     fun {MixMerge P2T ToMerge}
         fun {MergeAux Music}
             case Music of Factor#Part then 
-                {MultEach {PartMix P2T Part} Factor}
+                {MultEach {PartMix P2T Part.1} Factor}
             else nil
             end
         end
     in
         {FoldR {Map ToMerge MergeAux} MergeList nil}
     end
-
 
     %Fonction qui échantillone la musique 
     fun {PartMix P2T Music}
@@ -411,7 +410,6 @@ in
                 else nil
                 end
             end
-
         in
             MusicExtended = {P2T Music}
             {PartMixAux MusicExtended}
@@ -421,6 +419,7 @@ in
     fun {Mix P2T Music}
         case Music of H|T then
             case H of merge(M) then
+                {Browse H.1}
                 {Concat {MixMerge P2T H.1} {Mix P2T T}}
             [] partition(P) then
                 {Concat {PartMix P2T H.1} {Mix P2T T}}
