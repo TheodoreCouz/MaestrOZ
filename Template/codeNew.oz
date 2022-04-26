@@ -21,6 +21,7 @@ local
     MergeList
     MultEach
     MixRepeat
+    MixCut
 
     % extended
     NoteToExtended
@@ -422,6 +423,19 @@ in
         end
     end
 
+    fun {MixCut Low High Mu}
+        case Mu of H|T then 
+            if H < Low then 
+                {Concat [Low] {MixCut Low High T}}
+            elseif H > High then
+                {Concat [High] {MixCut Low High T}}
+            else 
+                {Concat [H] {MixCut Low High T}}
+            end
+        else 
+          nil
+        end
+    end
 
     fun {Mix P2T Music}
         case Music of H|T then
@@ -438,17 +452,38 @@ in
                 {Concat {Reverse {Mix P2T H.1}} {Mix P2T T}}
             [] samples(Sample) then 
                 {Concat H.1 {Mix P2T T}}
+            [] clip(low:Low high:High Mu) then
+                if Low > High then
+                    {Mix P2T T}
+                else 
+                    {Concat {MixCut Low High {Mix P2T H.1}} {Mix P2T T}}
+                end
             else nil end
         else nil end
     end
 
 
     % MergeList
-    %{Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
+    % {Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
+
+    % Test du Merge
     %{Browse {Project.run Mix PartitionToTimedList [merge([0.4#partition([stretch(factor:120.0 [c4 e4 f4])]) 0.6#partition([d6 c3])])] 'out.wav'}}
+
+    % Test du repeat
     %{Browse {Project.run Mix PartitionToTimedList [repeat(amount:3.0 [partition([a4 d4])])] 'out.wav'}}
+
+    % Test du partition
     %{Browse {Project.run Mix PartitionToTimedList [partition([c4 d4 e4 f4])] 'out.wav'}}
-    %{Browse {Project.run Mix PartitionToTimedList [reverse([partition([a4 d4 e3 b4])])] 'out.wav'}}
+
+    % Test du reverse
+    %{Browse {Project.run Mix PartitionToTimedList [reverse([partition([a4 d4 e3 b4])]) ] 'out.wav'}}
+
+    % Test du wave
     %{Browse {Project.run Mix PartitionToTimedList [wave('wave/animals/cow.wav')] 'out.wav'}}
-    {Browse {Project.run Mix PartitionToTimedList [samples({Mix PartitionToTimedList [partition([c3])]})] 'out.wav'}}
+
+    % Test du samples
+    %{Browse {Project.run Mix PartitionToTimedList [samples({Mix PartitionToTimedList [partition([c3])]})] 'out.wav'}}
+
+    % Test du clip
+    {Browse {Project.run Mix PartitionToTimedList [clip(low:~0.01 high:0.01 [partition([c6])]) partition([c6])]  'out.wav' }}
 end
