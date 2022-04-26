@@ -436,17 +436,19 @@ in
                 {Concat {Project.readFile Path} {Mix P2T T}}
             [] reverse(Mus) then
                 {Concat {Reverse {Mix P2T H.1}} {Mix P2T T}}
+            [] samples(Sample) then 
+                {Concat H.1 {Mix P2T T}}
             else nil end
         else nil end
     end
 
 
     % MergeList
-    {Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
+    %{Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
     %{Browse {Project.run Mix PartitionToTimedList [merge([0.4#partition([stretch(factor:120.0 [c4 e4 f4])]) 0.6#partition([d6 c3])])] 'out.wav'}}
     %{Browse {Project.run Mix PartitionToTimedList [repeat(amount:3.0 [partition([a4 d4])])] 'out.wav'}}
     %{Browse {Project.run Mix PartitionToTimedList [partition([c4 d4 e4 f4])] 'out.wav'}}
     %{Browse {Project.run Mix PartitionToTimedList [reverse([partition([a4 d4 e3 b4])])] 'out.wav'}}
     %{Browse {Project.run Mix PartitionToTimedList [wave('wave/animals/cow.wav')] 'out.wav'}}
-
+    {Browse {Project.run Mix PartitionToTimedList [samples({Mix PartitionToTimedList [partition([c3])]})] 'out.wav'}}
 end
