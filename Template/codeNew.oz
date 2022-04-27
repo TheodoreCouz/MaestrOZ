@@ -37,6 +37,8 @@ local
     MixMerge
     MixCut
     MixLoop
+    MexIcho
+    MixMergeMEXICO
 
 
     %main functions
@@ -335,6 +337,15 @@ in
         in {FoldR {Map ToMerge MergeAux} MergeList nil}
         end
 
+        % merge function
+        fun {MixMergeMEXICO ToMerge}
+            fun {MergeAux Music}
+                case Music of Factor#Part then {MultEach Part Factor}
+                else nil end
+            end
+        in {FoldR {Map ToMerge MergeAux} MergeList nil}
+        end
+
         % Repeat function
         fun {MixRepeat Amount Music}
             if Amount == 1.0 then
@@ -371,6 +382,22 @@ in
 
 
         % echo
+        fun {MexIcho Duracion Factor M}
+            local 
+                Temporal Silencio 
+            in
+                fun{Silencio ElAccumulador}
+                case ElAccumulador of 1.0 then
+                      0.0
+                     else
+                        0.0 | {Silencio (ElAccumulador - 1.0)}
+                    end
+                end
+                    Temporal = {Concat {Silencio (Duracion*44100.0)} M}
+                    {MixMergeMEXICO [1.0#M Factor#Temporal]}
+            end
+        end
+        
 
         % fade
 
@@ -513,12 +540,16 @@ in
             [] loop(seconds:Seconds Music) then
                 {Concat {MixLoop Seconds {Mix P2T H.1}} {Mix P2T T}}
 
+            [] echo(delay:Duracion decay:Factor M) then 
+                {Concat {MexIcho Duracion Factor {Mix P2T H.1}} {Mix P2T T}}
+
             else nil end % not supposed to happen
 
         else nil end % reached the end of the list
     end
 
     % Test du son mii
-    {Browse {Project.run Mix PartitionToTimedList Music 'out.wav' }}
-
+    %{Browse {Project.run Mix PartitionToTimedList [echo(delay:0.05 decay:0.5 Music)] 'out.wav' }}
+    %{Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
+    %{Browse {Project.run Mix PartitionToTimedList [loop(seconds:30.5 [partition([a4])])]  'out.wav' }}
 end

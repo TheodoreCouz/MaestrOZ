@@ -179,6 +179,10 @@ end
 % Test du cut
 %{Browse {Project.run Mix PartitionToTimedList [cut(start:0.5 finish:3.0 [partition([c6])])]  'out.wav' }}
 
+% Test du Mexico
+% {Browse {Project.run Mix PartitionToTimedList [echo(delay:0.05 decay:0.5 Music)] 'out.wav' }}
+
+
 
 
 declare 
