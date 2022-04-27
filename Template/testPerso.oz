@@ -173,6 +173,14 @@ end
 % Test du clip
 {Browse {Project.run Mix PartitionToTimedList [clip(low:~0.01 high:0.01 [partition([c6])]) partition([c6])]  'out.wav' }}
 
+% Test du loop
+%{Browse {Project.run Mix PartitionToTimedList [loop(seconds:30.5 [partition([a4])])]  'out.wav' }}
+
+% Test du cut
+%{Browse {Project.run Mix PartitionToTimedList [cut(start:0.5 finish:3.0 [partition([c6])])]  'out.wav' }}
+
+
+
 declare 
 
 Rec = record(duration:3.0 octave:6.0 45)

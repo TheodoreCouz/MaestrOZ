@@ -36,6 +36,7 @@ local
     MixClip
     MixMerge
     MixCut
+    MixLoop
 
 
     %main functions
@@ -358,13 +359,22 @@ in
             end
         end
 
-        % loop
+        % loop function
+        fun {MixLoop Seconds Music} MusicDuration in
+            MusicDuration = {IntToFloat {List.length Music}} / 44100.0
+            if Seconds >= MusicDuration then
+                {Concat Music {MixLoop (Seconds - MusicDuration) Music}}
+            else 
+              {MixCut 0.0 Seconds 0.0 Music}
+            end
+        end
+
 
         % echo
 
         % fade
 
-        % cut
+        % cut function
         fun {MixCut StartTime EndTime Counter M}
             case M of H|T then
                 if Counter =< (StartTime * 44100.0) then
@@ -492,20 +502,23 @@ in
                 else 
                     {Concat {MixClip Low High {Mix P2T H.1}} {Mix P2T T}} % use clip filter
                 end
+
             [] cut(start:StartTime finish:EndTime M) then
                 if StartTime > EndTime then
                     {Mix P2T T}
                 else
                     {Concat {MixCut StartTime EndTime 0.0 {Mix P2T H.1}} {Mix P2T T}}
                 end
+
+            [] loop(seconds:Seconds Music) then
+                {Concat {MixLoop Seconds {Mix P2T H.1}} {Mix P2T T}}
+
             else nil end % not supposed to happen
 
         else nil end % reached the end of the list
     end
 
-    % Test du clip
-    %{Browse {Project.run Mix PartitionToTimedList Music 'out.wav' }}
-
-    {Browse {Project.run Mix PartitionToTimedList [cut(start:0.5 finish:3.0 [partition([c6])])]  'out.wav' }}
+    % Test du son mii
+    {Browse {Project.run Mix PartitionToTimedList Music 'out.wav' }}
 
 end
