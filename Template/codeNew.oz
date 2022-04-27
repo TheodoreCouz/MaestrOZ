@@ -2,7 +2,7 @@ local
 
     % See project statement for API details.
     % !!! Please remove CWD identifier when submitting your project !!!
-    CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' % Put here the **absolute** path to the project files
+    CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % Put here the **absolute** path to the project files
     [Project] = {Link [CWD#'Project2022.ozf']}
 
     %%%%%%%%%%%%%%%%%%%FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -35,6 +35,7 @@ local
     MixRepeat
     MixClip
     MixMerge
+    MixCut
 
 
     %main functions
@@ -364,6 +365,21 @@ in
         % fade
 
         % cut
+        fun {MixCut StartTime EndTime Counter M}
+            case M of H|T then
+                if Counter =< (StartTime * 44100.0) then
+                    {MixCut StartTime EndTime (Counter+1.0) T}
+                else
+                    {Concat [H] {MixCut StartTime EndTime (Counter+1.0) T}}
+                end
+            else 
+                if Counter =< (EndTime * 44100.0) then
+                    {Concat [0.0] {MixCut StartTime EndTime (Counter+1.0) nil}}
+                else 
+                    nil
+                end
+            end
+        end
     
 
     %%%%%%%%%%%%%%%%%%%%%%%%MAIN-FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -474,14 +490,22 @@ in
                 if Low > High then % if base case not respected
                     {Mix P2T T}
                 else 
-                    {Concat {MixClip Low High {Mix P2T H.1}} {Mix P2T T}} % use cut filter
+                    {Concat {MixClip Low High {Mix P2T H.1}} {Mix P2T T}} % use clip filter
                 end
-
+            [] cut(start:StartTime finish:EndTime M) then
+                if StartTime > EndTime then
+                    {Mix P2T T}
+                else
+                    {Concat {MixCut StartTime EndTime 0.0 {Mix P2T H.1}} {Mix P2T T}}
+                end
             else nil end % not supposed to happen
 
         else nil end % reached the end of the list
     end
 
     % Test du clip
-    {Browse {Project.run Mix PartitionToTimedList Music 'out.wav' }}
+    %{Browse {Project.run Mix PartitionToTimedList Music 'out.wav' }}
+
+    {Browse {Project.run Mix PartitionToTimedList [cut(start:0.5 finish:3.0 [partition([c6])])]  'out.wav' }}
+
 end
