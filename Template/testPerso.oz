@@ -125,11 +125,11 @@ declare
 
 % returns a list of points associated to a note and its duration
 fun {GetPoints Note Freq I}
-    if I == ({IntToFloat Note.duration}*U) then
-        nil
-    else
-        {Sample Freq I}|{GetPoints Note Freq I+1.0}
-    end
+if I == ({IntToFloat Note.duration}*U) then
+    nil
+else
+    {Sample Freq I}|{GetPoints Note Freq I+1.0}
+end
 end
 
 Note = {NoteToExtended c2}
@@ -141,7 +141,7 @@ Note = {NoteToExtended c2}
 {Browse {GetPoints Note {GetFreq Note} 1.0}}
 
 for I in {PartMix PartitionToTimedList [c1 c2]} do
-    {Browse I}
+{Browse I}
 end
 
 {Browse {Project.run Mix PartitionToTimedList [c4 d4 e4 f4] 'out.wav'}}
@@ -149,3 +149,38 @@ end
 {Browse {List.length [1 2 3]}}
 
 
+% MergeList
+% {Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
+
+% Test du Merge
+%{Browse {Project.run Mix PartitionToTimedList [merge([0.4#partition([stretch(factor:120.0 [c4 e4 f4])]) 0.6#partition([d6 c3])])] 'out.wav'}}
+
+% Test du repeat
+%{Browse {Project.run Mix PartitionToTimedList [repeat(amount:3.0 [partition([a4 d4])])] 'out.wav'}}
+
+% Test du partition
+%{Browse {Project.run Mix PartitionToTimedList [partition([c4 d4 e4 f4])] 'out.wav'}}
+
+% Test du reverse
+%{Browse {Project.run Mix PartitionToTimedList [reverse([partition([a4 d4 e3 b4])]) ] 'out.wav'}}
+
+% Test du wave
+%{Browse {Project.run Mix PartitionToTimedList [wave('wave/animals/cow.wav')] 'out.wav'}}
+
+% Test du samples
+%{Browse {Project.run Mix PartitionToTimedList [samples({Mix PartitionToTimedList [partition([c3])]})] 'out.wav'}}
+
+% Test du clip
+{Browse {Project.run Mix PartitionToTimedList [clip(low:~0.01 high:0.01 [partition([c6])]) partition([c6])]  'out.wav' }}
+
+declare 
+
+Rec = record(duration:3.0 octave:6.0 45)
+
+case Rec of record(duration:D octave:O A) then
+    {Browse D}
+    {Browse O}
+    {Browse A}
+else 
+    {Browse '...'}
+end

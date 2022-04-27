@@ -2,7 +2,7 @@ local
 
     % See project statement for API details.
     % !!! Please remove CWD identifier when submitting your project !!!
-    CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % Put here the **absolute** path to the project files
+    CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' % Put here the **absolute** path to the project files
     [Project] = {Link [CWD#'Project2022.ozf']}
 
     %%%%%%%%%%%%%%%%%%%FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -20,8 +20,6 @@ local
     MultList
     MergeList
     MultEach
-    MixRepeat
-    MixCut
 
     % extended
     NoteToExtended
@@ -33,13 +31,16 @@ local
     Duration
     Transpose
 
+    % filters
+    MixRepeat
+    MixClip
+    MixMerge
+
+
     %main functions
     PartitionToTimedList
     Mix
     PartMix
-
-    MergeAux
-    MixMerge
 
     %%%%%%%%%%%%%%%%%%%%VARIABLES%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -310,7 +311,7 @@ in
                 case Partition of H|T then
                     case H of note(name:N octave:O sharp:S duration:D instrument:I) then
                         {NextNote Semitones H}|{Transpose Semitones T}
-                    else 
+                    else
                         {NextChord Semitones H}|{Transpose Semitones T}
                     end
                 else nil
@@ -321,45 +322,78 @@ in
         end
     end
 
+    %%%%%%%%%%%%%%%%%%%%%%%%FILTERS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+        % merge function
+        fun {MixMerge P2T ToMerge}
+            fun {MergeAux Music}
+                case Music of Factor#Part then {MultEach {PartMix P2T Part.1} Factor}
+                else nil end
+            end
+        in {FoldR {Map ToMerge MergeAux} MergeList nil}
+        end
+
+        % Repeat function
+        fun {MixRepeat Amount Music}
+            if Amount == 1.0 then
+              Music
+            else
+              {Concat Music {MixRepeat (Amount - 1.0) Music}}
+            end
+        end
+
+        % clip function
+        fun {MixClip Low High Mu}
+            case Mu of H|T then 
+                if H < Low then 
+                    {Concat [Low] {MixClip Low High T}}
+                elseif H > High then
+                    {Concat [High] {MixClip Low High T}}
+                else 
+                    {Concat [H] {MixClip Low High T}}
+                end
+            else 
+              nil
+            end
+        end
+
+        % loop
+
+        % echo
+
+        % fade
+
+        % cut
+    
+
     %%%%%%%%%%%%%%%%%%%%%%%%MAIN-FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     fun {PartitionToTimedList P}
         case P of H|T then
 
-            case H of duration(seconds:S P) then
-                {Concat {Duration H.seconds H.1}{PartitionToTimedList T}}
+            case H of duration(seconds:S P) then % duration transformation
+                {Concat {Duration S P}{PartitionToTimedList T}}
 
-            [] stretch(factor:F P) then
-                {Concat {Stretch H.factor H.1}{PartitionToTimedList T}}
+            [] stretch(factor:F P) then % stretch transformation
+                {Concat {Stretch F P}{PartitionToTimedList T}}
 
-            [] drone(note:N amount:A) then
-                {Concat {Drone H.note H.amount}{PartitionToTimedList T}}
+            [] drone(note:N amount:A) then % drone transformation
+                {Concat {Drone N A}{PartitionToTimedList T}}
 
-            [] transpose(semitones:S P) then
-                {Concat {Transpose H.semitones H.1}{PartitionToTimedList T}}
-            [] silence(duration:D) then
+            [] transpose(semitones:S P) then % transpose transformation
+                {Concat {Transpose S P}{PartitionToTimedList T}}
+            [] silence(duration:D) then % silence
                 H|{PartitionToTimedList T}
 
             else
-                if {IsList H} then
+                if {IsList H} then % chord
                     {ChordToExtended H}|{PartitionToTimedList T}
-                else
+                else % note
                     {NoteToExtended H}|{PartitionToTimedList T}
                 end
             end
         else nil
         end
-    end
-
-
-
-    % merge function
-    fun {MixMerge P2T ToMerge}
-        fun {MergeAux Music}
-            case Music of Factor#Part then {MultEach {PartMix P2T Part.1} Factor}
-            else nil end
-        end
-    in {FoldR {Map ToMerge MergeAux} MergeList nil}
     end
 
     %Fonction qui échantillone la musique 
@@ -382,12 +416,10 @@ in
             % treats chord
             fun {MixChord Chord} Len Divide Samples in
                 Len = {IntToFloat {List.length Chord}} % number of notes in Chord
-
                 % Divides each element of [L] by [Factor ]
                 fun {Divide L}
                     L/Len
                 end
-
                 Samples = {Map Chord Aux}
                 {Map {FoldR Samples MergeList nil} Divide}
             end
@@ -398,7 +430,7 @@ in
                     case H of note(name:N octave:O sharp:S duration:D instrument:I) then
                         {Concat {Aux H} {PartMixAux T}}
                     [] silence(duration:D) then 
-                        {Concat {GetPoints H.duration 0.0 0.0} {PartMixAux T}}
+                        {Concat {GetPoints D 0.0 0.0} {PartMixAux T}}
                     [] H1|T1 then % is a chord
                         case H1 of note(name:N octave:O sharp:S duration:D instrument:I) then
                             {Concat {MixChord H} {PartMixAux T}}
@@ -415,75 +447,41 @@ in
         end
     end 
 
-    fun {MixRepeat Amount Music}
-        if Amount == 1.0 then
-          Music
-        else
-          {Concat Music {MixRepeat (Amount - 1.0) Music}}
-        end
-    end
-
-    fun {MixCut Low High Mu}
-        case Mu of H|T then 
-            if H < Low then 
-                {Concat [Low] {MixCut Low High T}}
-            elseif H > High then
-                {Concat [High] {MixCut Low High T}}
-            else 
-                {Concat [H] {MixCut Low High T}}
-            end
-        else 
-          nil
-        end
-    end
-
+    % mix function (provides .wav files)
     fun {Mix P2T Music}
+
         case Music of H|T then
-            case H of merge(M) then
-                {Browse H.1}
-                {Concat {MixMerge P2T H.1} {Mix P2T T}}
+
+            case H of merge(Muse) then
+                {Concat {MixMerge P2T Muse} {Mix P2T T}}
+
             [] partition(P) then
-                {Concat {PartMix P2T H.1} {Mix P2T T}}
+                {Concat {PartMix P2T P} {Mix P2T T}}
+
             [] repeat(amount:Amount Muse) then
-                {Concat {MixRepeat Amount {Mix P2T H.1}} {Mix P2T T}}
+                {Concat {MixRepeat Amount {Mix P2T Muse}} {Mix P2T T}}
+
             [] wave(Path) then
                 {Concat {Project.readFile Path} {Mix P2T T}}
-            [] reverse(Mus) then
-                {Concat {Reverse {Mix P2T H.1}} {Mix P2T T}}
+
+            [] reverse(Muse) then
+                {Concat {Reverse {Mix P2T Muse}} {Mix P2T T}}
+
             [] samples(Sample) then 
-                {Concat H.1 {Mix P2T T}}
+                {Concat Sample {Mix P2T T}}
+
             [] clip(low:Low high:High Mu) then
-                if Low > High then
+                if Low > High then % if base case not respected
                     {Mix P2T T}
                 else 
-                    {Concat {MixCut Low High {Mix P2T H.1}} {Mix P2T T}}
+                    {Concat {MixClip Low High {Mix P2T H.1}} {Mix P2T T}} % use cut filter
                 end
-            else nil end
-        else nil end
+
+            else nil end % not supposed to happen
+
+        else nil end % reached the end of the list
     end
 
-
-    % MergeList
-    % {Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
-
-    % Test du Merge
-    %{Browse {Project.run Mix PartitionToTimedList [merge([0.4#partition([stretch(factor:120.0 [c4 e4 f4])]) 0.6#partition([d6 c3])])] 'out.wav'}}
-
-    % Test du repeat
-    %{Browse {Project.run Mix PartitionToTimedList [repeat(amount:3.0 [partition([a4 d4])])] 'out.wav'}}
-
-    % Test du partition
-    %{Browse {Project.run Mix PartitionToTimedList [partition([c4 d4 e4 f4])] 'out.wav'}}
-
-    % Test du reverse
-    %{Browse {Project.run Mix PartitionToTimedList [reverse([partition([a4 d4 e3 b4])]) ] 'out.wav'}}
-
-    % Test du wave
-    %{Browse {Project.run Mix PartitionToTimedList [wave('wave/animals/cow.wav')] 'out.wav'}}
-
-    % Test du samples
-    %{Browse {Project.run Mix PartitionToTimedList [samples({Mix PartitionToTimedList [partition([c3])]})] 'out.wav'}}
-
     % Test du clip
-    {Browse {Project.run Mix PartitionToTimedList [clip(low:~0.01 high:0.01 [partition([c6])]) partition([c6])]  'out.wav' }}
+    {Browse {Project.run Mix PartitionToTimedList Music 'out.wav' }}
 end
