@@ -39,6 +39,7 @@ local
     MixLoop
     MexIcho
     MixMergeMEXICO
+    MixFade
 
 
     %main functions
@@ -422,6 +423,43 @@ in
                 end
             end
         end
+
+        % fade 
+        fun {MixFade Start Out Music}
+            local
+
+                DurS = Start * U
+
+                % deals with the start of the music
+                fun {FadeStart Music I Coef}
+                    case Music of H|T then
+                        if I == DurS then
+                            Music
+                        else
+                            H*Coef|{FadeStart T I+1.0 I/DurS}
+                        end
+                    else nil end
+                end 
+
+                % deals with the end of the music
+                fun {FadeEnd Music}
+                    local 
+                        MusicReversed = {Reverse Music}
+                        MusicProcessed = {FadeStart MusicReversed 0.0 0.0}
+                    in
+                        {Reverse MusicProcessed}
+                    end
+                end
+
+
+                MusicS
+                MusicE
+            in
+                MusicS = {FadeStart Music 0.0 0.0}
+                MusicE = {FadeEnd MusicS}
+                MusicE
+            end
+        end
     
 
     %%%%%%%%%%%%%%%%%%%%%%%%MAIN-FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -532,21 +570,24 @@ in
                 if Low > High then % if base case not respected
                     {Mix P2T T}
                 else 
-                    {Concat {MixClip Low High {Mix P2T H.1}} {Mix P2T T}} % use clip filter
+                    {Concat {MixClip Low High {Mix P2T Mu}} {Mix P2T T}} % use clip filter
                 end
 
             [] cut(start:StartTime finish:EndTime M) then
                 if StartTime > EndTime then
                     {Mix P2T T}
                 else
-                    {Concat {MixCut StartTime EndTime 0.0 {Mix P2T H.1}} {Mix P2T T}}
+                    {Concat {MixCut StartTime EndTime 0.0 {Mix P2T M}} {Mix P2T T}}
                 end
 
             [] loop(seconds:Seconds Music) then
-                {Concat {MixLoop Seconds {Mix P2T H.1}} {Mix P2T T}}
+                {Concat {MixLoop Seconds {Mix P2T Music}} {Mix P2T T}}
 
             [] echo(delay:Duracion decay:Factor M) then 
-                {Concat {MexIcho Duracion Factor {Mix P2T H.1}} {Mix P2T T}}
+                {Concat {MexIcho Duracion Factor {Mix P2T M}} {Mix P2T T}}
+
+            [] fade(start:S out:O Muse) then
+                {Concat {MixFade S O {Mix P2T Muse}} {Mix P2T T}}
 
             else nil end % not supposed to happen
 
@@ -558,5 +599,5 @@ in
     %{Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
     %{Browse {Project.run Mix PartitionToTimedList [echo(delay:0.5 decay:0.5 [loop(seconds:4.0 [echo(delay:0.5 decay:0.5 Music)])])]  'out.wav' }}
     %{Browse {Project.run Mix PartitionToTimedList [cut(start:1.0 finish:2.0 Music)]  'out.wav' }}
-    {Browse {Project.run Mix PartitionToTimedList TEST 'out.wav'}}
+    {Browse {Project.run Mix PartitionToTimedList [repeat(amount:10.0 [fade(start:1.0 out:1.0 [partition([stretch(factor:1.0 [a4])])])])] 'out.wav'}}
 end
