@@ -2,7 +2,8 @@ local
 
     % See project statement for API details.
     % !!! Please remove CWD identifier when submitting your project !!!
-    CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % Put here the **absolute** path to the project files
+    % CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % Put here the **absolute** path to the project files
+    CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' 
     [Project] = {Link [CWD#'Project2022.ozf']}
 
     %%%%%%%%%%%%%%%%%%%FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -24,6 +25,7 @@ local
     % extended
     NoteToExtended
     ChordToExtended
+    SilenceToExtended
 
     % transitions
     Drone
@@ -73,8 +75,10 @@ in
         local
             fun {TotalDurationAux Partition Acc} 
                 case Partition of H|T then
-                    if {Label H} == note then
-                        {TotalDurationAux T Acc+H.duration}
+                    case H of note(duration:D name:N octave:O sharp:S instrument:I) then
+                        {TotalDurationAux T Acc+D}
+                    [] silence(duration:D) then
+                        {TotalDurationAux T Acc+D}
                     else
                         {TotalDurationAux T Acc+H.1.duration}
                     end
@@ -234,10 +238,22 @@ in
         end
     end
 
+    % Translate a silence to the extended notation.
+    fun {SilenceToExtended Silence}
+        case Silence of silence(duration:D) then Silence
+        else silence(duration:1.0) end
+    end
+
     % Translate a chord to the extended notation.
     fun {ChordToExtended Chord}
         case Chord of H|T then
-            {NoteToExtended H}|{ChordToExtended T}
+            case H of silence then
+                {SilenceToExtended H}|{ChordToExtended T}
+            [] silence(duration:D) then
+                {SilenceToExtended H}|{ChordToExtended T}
+            else
+                {NoteToExtended H}|{ChordToExtended T}
+            end
         else nil
         end
     end
@@ -251,6 +267,10 @@ in
             local ExtendedSound in
                 case Sound of H|T then 
                     ExtendedSound = {ChordToExtended Sound}
+                [] silence(duration:D) then
+                    ExtendedSound = {SilenceToExtended Sound}
+                [] silence then 
+                    ExtendedSound = {SilenceToExtended Sound}
                 else ExtendedSound = {NoteToExtended Sound}
                 end
             ExtendedSound|{Drone Sound Amount-1}
@@ -264,13 +284,10 @@ in
 
             fun {StretchChord Factor Chord}
                 case Chord of H|T then 
-                    note(
-                        duration:(H.duration*Factor) 
-                        instrument:(H.instrument) 
-                        name:(H.name) 
-                        octave:(H.octave) 
-                        sharp:(H.sharp)
-                        )| {StretchChord Factor T}
+                    case H of note(duration:D instrument:I sharp:S name:N octave:O) then
+                        note(duration:(D*Factor) instrument:I name:N octave:O sharp:S)|{StretchChord Factor T}
+                    [] silence(duration:D) then silence(duration:D*Factor)|{StretchChord Factor T}
+                    end
                 else nil
                 end
             end
@@ -278,18 +295,12 @@ in
             fun {StretchAux Factor Partition}
                 case Partition of H|T then
                     case H of Head|Tail then
-                        {StretchChord Factor H}|{Stretch Factor T}
+                        {StretchChord Factor H}|{StretchAux Factor T}
                     [] silence(duration:D) then
-                        silence(duration:Factor*H.duration)|{Stretch Factor T}
-                    else
-                        note(
-                            duration:(H.duration*Factor) 
-                            instrument:(H.instrument) 
-                            name:(H.name) 
-                            octave:(H.octave) 
-                            sharp:(H.sharp)
-                            )|{Stretch Factor T}
-                    end
+                        silence(duration:Factor*D)|{StretchAux Factor T}
+                    [] note(duration:D instrument:I sharp:S name:N octave:O) then
+                        note(duration:(D*Factor) instrument:I name:N octave:O sharp:S)|{StretchAux Factor T}
+                    else nil end
                 else nil
                 end
             end
@@ -318,6 +329,8 @@ in
                 case Partition of H|T then
                     case H of note(name:N octave:O sharp:S duration:D instrument:I) then
                         {NextNote Semitones H}|{Transpose Semitones T}
+                    [] silence(duration:D) then
+                        H|{Transpose Semitones T}
                     else
                         {NextChord Semitones H}|{Transpose Semitones T}
                     end
@@ -427,9 +440,7 @@ in
         % fade 
         fun {MixFade Start Out Music}
             local
-
                 DurS = Start * U
-
                 % deals with the start of the music
                 fun {FadeStart Music I Coef}
                     case Music of H|T then
@@ -450,14 +461,10 @@ in
                         {Reverse MusicProcessed}
                     end
                 end
-
-
                 MusicS
-                MusicE
             in
                 MusicS = {FadeStart Music 0.0 0.0}
-                MusicE = {FadeEnd MusicS}
-                MusicE
+                {FadeEnd MusicS}
             end
         end
     
@@ -478,12 +485,17 @@ in
 
             [] transpose(semitones:S P) then % transpose transformation
                 {Concat {Transpose S P}{PartitionToTimedList T}}
+
+            [] silence then % case of silence
+                {SilenceToExtended silence}|{PartitionToTimedList T}
+
             [] silence(duration:D) then % silence
                 H|{PartitionToTimedList T}
 
             else
                 if {IsList H} then % chord
-                    {ChordToExtended H}|{PartitionToTimedList T}
+                    if {Length H} == 0 then nil
+                    else {ChordToExtended H}|{PartitionToTimedList T} end
                 else % note
                     {NoteToExtended H}|{PartitionToTimedList T}
                 end
@@ -594,11 +606,9 @@ in
         else nil end % reached the end of the list
     end
 
-    % Test du son mii
-    %{Browse {Project.run Mix PartitionToTimedList [repeat(amount:10.0 [echo(delay:0.5 decay:0.5 Music)])] 'out.wav' }}
-    %{Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
-    %{Browse {Project.run Mix PartitionToTimedList [echo(delay:0.5 decay:0.5 [loop(seconds:4.0 [echo(delay:0.5 decay:0.5 Music)])])]  'out.wav' }}
-    %{Browse {Project.run Mix PartitionToTimedList [cut(start:1.0 finish:2.0 Music)]  'out.wav' }}
-    {Browse {Project.run Mix PartitionToTimedList [repeat(amount:10.0 [fade(start:1.0 out:1.0 [partition([stretch(factor:1.0 [a4])])])])] 'out.wav'}}
+    % {Browse {Project.run Mix PartitionToTimedList JOY 'out.wav'}}
 
 end
+
+% silence dans un accord (ok)
+% accord vide -> remplacer par nil ()

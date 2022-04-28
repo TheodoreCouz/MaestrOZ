@@ -185,14 +185,7 @@ end
 
 
 
-declare 
-
-Rec = record(duration:3.0 octave:6.0 45)
-
-case Rec of record(duration:D octave:O A) then
-    {Browse D}
-    {Browse O}
-    {Browse A}
-else 
-    {Browse '...'}
-end
+    % Test du son mii
+    %{Browse {Project.run Mix PartitionToTimedList [repeat(amount:10.0 [echo(delay:0.5 decay:0.5 Music)])] 'out.wav' }}
+    %{Browse {Project.run Mix PartitionToTimedList [echo(delay:0.5 decay:0.5 [loop(seconds:4.0 [echo(delay:0.5 decay:0.5 Music)])])]  'out.wav' }}
+    %{Browse {Project.run Mix PartitionToTimedList [cut(start:1.0 finish:2.0 Music)]  'out.wav' }}
