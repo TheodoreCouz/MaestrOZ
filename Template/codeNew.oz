@@ -2,7 +2,7 @@ local
 
     % See project statement for API details.
     % !!! Please remove CWD identifier when submitting your project !!!
-    CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' % Put here the **absolute** path to the project files
+    CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % Put here the **absolute** path to the project files
     [Project] = {Link [CWD#'Project2022.ozf']}
 
     %%%%%%%%%%%%%%%%%%%FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -600,4 +600,5 @@ in
     %{Browse {Project.run Mix PartitionToTimedList [echo(delay:0.5 decay:0.5 [loop(seconds:4.0 [echo(delay:0.5 decay:0.5 Music)])])]  'out.wav' }}
     %{Browse {Project.run Mix PartitionToTimedList [cut(start:1.0 finish:2.0 Music)]  'out.wav' }}
     {Browse {Project.run Mix PartitionToTimedList [repeat(amount:10.0 [fade(start:1.0 out:1.0 [partition([stretch(factor:1.0 [a4])])])])] 'out.wav'}}
+
 end
