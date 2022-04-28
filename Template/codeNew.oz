@@ -407,7 +407,10 @@ in
                 if Counter =< (StartTime * 44100.0) then
                     {MixCut StartTime EndTime (Counter+1.0) T}
                 else
-                    {Concat [H] {MixCut StartTime EndTime (Counter+1.0) T}}
+                    if Counter >= (EndTime * 44100.0) then
+                        nil
+                    else {Concat [H] {MixCut StartTime EndTime (Counter+1.0) T}}
+                    end
                 end
             else 
                 if Counter =< (EndTime * 44100.0) then
@@ -549,7 +552,9 @@ in
     end
 
     % Test du son mii
-    %{Browse {Project.run Mix PartitionToTimedList [echo(delay:0.05 decay:0.5 Music)] 'out.wav' }}
+    %{Browse {Project.run Mix PartitionToTimedList [repeat(amount:10.0 [echo(delay:0.5 decay:0.5 Music)])] 'out.wav' }}
     %{Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
-    %{Browse {Project.run Mix PartitionToTimedList [loop(seconds:30.5 [partition([a4])])]  'out.wav' }}
+    {Browse {Project.run Mix PartitionToTimedList [loop(seconds:4.0 Music)]  'out.wav' }}
+    %{Browse {Project.run Mix PartitionToTimedList [cut(start:1.0 finish:2.0 Music)]  'out.wav' }}
+
 end
