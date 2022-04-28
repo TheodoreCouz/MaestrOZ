@@ -554,7 +554,7 @@ in
     % Test du son mii
     %{Browse {Project.run Mix PartitionToTimedList [repeat(amount:10.0 [echo(delay:0.5 decay:0.5 Music)])] 'out.wav' }}
     %{Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
-    {Browse {Project.run Mix PartitionToTimedList [loop(seconds:4.0 Music)]  'out.wav' }}
+    {Browse {Project.run Mix PartitionToTimedList [echo(delay:0.5 decay:0.5 [loop(seconds:4.0 Music)])]  'out.wav' }}
     %{Browse {Project.run Mix PartitionToTimedList [cut(start:1.0 finish:2.0 Music)]  'out.wav' }}
 
 end
