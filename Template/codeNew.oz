@@ -2,7 +2,7 @@ local
 
     % See project statement for API details.
     % !!! Please remove CWD identifier when submitting your project !!!
-    CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % Put here the **absolute** path to the project files
+    CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' % Put here the **absolute** path to the project files
     [Project] = {Link [CWD#'Project2022.ozf']}
 
     %%%%%%%%%%%%%%%%%%%FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -50,7 +50,9 @@ local
 
     PI = 3.14159265358979
     U = 44100.0
-    Music = {Project.load CWD#'mii.dj.oz'}
+    TEST = {Project.load CWD#'test.dj.oz'}
+    MII = {Project.load CWD#'mii.dj.oz'}
+    JOY = {Project.load CWD#'joy.dj.oz'}
 
 in
 
@@ -554,7 +556,7 @@ in
     % Test du son mii
     %{Browse {Project.run Mix PartitionToTimedList [repeat(amount:10.0 [echo(delay:0.5 decay:0.5 Music)])] 'out.wav' }}
     %{Browse {Project.run Mix PartitionToTimedList Music 'out.wav'}}
-    {Browse {Project.run Mix PartitionToTimedList [echo(delay:0.5 decay:0.5 [loop(seconds:4.0 Music)])]  'out.wav' }}
+    %{Browse {Project.run Mix PartitionToTimedList [echo(delay:0.5 decay:0.5 [loop(seconds:4.0 [echo(delay:0.5 decay:0.5 Music)])])]  'out.wav' }}
     %{Browse {Project.run Mix PartitionToTimedList [cut(start:1.0 finish:2.0 Music)]  'out.wav' }}
-
+    {Browse {Project.run Mix PartitionToTimedList TEST 'out.wav'}}
 end
