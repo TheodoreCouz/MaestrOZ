@@ -1,9 +1,10 @@
 local
-
+    \insert 'tests.oz'
     % See project statement for API details.
     % !!! Please remove CWD identifier when submitting your project !!!
-    % CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % Put here the **absolute** path to the project files
-    CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' 
+    % CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % dieg
+    %CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' %theo laptop
+    CWD = '/home/aloka/Unif/BAC2/Q2/Para/MaestrOZ/MaestrOZ/Template/' %theo pc fixe
     [Project] = {Link [CWD#'Project2022.ozf']}
 
     %%%%%%%%%%%%%%%%%%%FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -222,7 +223,7 @@ in
 
     % Translate a note to the extended notation.
     fun {NoteToExtended Note}
-        if {Label Note} == note then 
+        case Note of note(name:N octave:O sharp:S duration:D instrument:I) then 
             Note
         else
             case Note of Name#Octave then
@@ -473,9 +474,11 @@ in
 
     fun {PartitionToTimedList P}
         case P of H|T then
-
             case H of duration(seconds:S P) then % duration transformation
                 {Concat {Duration S P}{PartitionToTimedList T}}
+
+            [] note(duration:D name:N octave:O sharp:S instrument:I) then
+                {NoteToExtended H}|{PartitionToTimedList T}
 
             [] stretch(factor:F P) then % stretch transformation
                 {Concat {Stretch F P}{PartitionToTimedList T}}
@@ -606,7 +609,7 @@ in
         else nil end % reached the end of the list
     end
 
-    % {Browse {Project.run Mix PartitionToTimedList JOY 'out.wav'}}
+    {Test Mix PartitionToTimedList}
 
 end
 

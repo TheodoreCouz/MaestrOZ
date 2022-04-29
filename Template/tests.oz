@@ -38,20 +38,71 @@ end
 % TEST PartitionToTimedNotes
 
 proc {TestNotes P2T}
-   skip
+   local
+      Partition = [silence c4 d4 e4 f4 g4 a4 b4]
+      PartitionExtended = {P2T Partition}
+      Expected = [
+         silence(duration:1.0)
+         note(duration:1.0 instrument:none sharp:false name:c octave:4)
+         note(duration:1.0 instrument:none sharp:false name:d octave:4)
+         note(duration:1.0 instrument:none sharp:false name:e octave:4)
+         note(duration:1.0 instrument:none sharp:false name:f octave:4)
+         note(duration:1.0 instrument:none sharp:false name:g octave:4)
+         note(duration:1.0 instrument:none sharp:false name:a octave:4)
+         note(duration:1.0 instrument:none sharp:false name:b octave:4)
+      ]  
+   in
+      {AssertEquals PartitionExtended Expected 'TestNotes Failed'}
+   end
 end
 
 proc {TestChords P2T}
-   skip
+   local
+      Partition = [[silence c4 e4 f4] a4]
+      PartitionExtended = {P2T Partition}
+      Expected = [
+         [
+         silence(duration:1.0)
+         note(duration:1.0 instrument:none sharp:false name:c octave:4)
+         note(duration:1.0 instrument:none sharp:false name:e octave:4)
+         note(duration:1.0 instrument:none sharp:false name:f octave:4)
+         ]
+         note(duration:1.0 instrument:none sharp:false name:a octave:4)
+      ]  
+   in
+      {AssertEquals PartitionExtended Expected 'TestChord Failed'}
+   end
 end
 
 proc {TestIdentity P2T}
    % test that extended notes and chord go from input to output unchanged
-   skip
+   local
+      Expected = [
+            [
+            note(duration:1.0 instrument:none sharp:false name:c octave:4)
+            note(duration:1.0 instrument:none sharp:false name:e octave:4)
+            note(duration:1.0 instrument:none sharp:false name:f octave:4)
+            ]
+            note(duration:1.0 instrument:none sharp:false name:a octave:4)
+            silence(duration:2.0)
+         ]
+      Processed = {P2T Expected}
+   in
+      {AssertEquals Processed Expected 'TestIdentity Failed'}
+   end
 end
 
 proc {TestDuration P2T}
-   skip
+   local
+      Partition = [duration(seconds:10.0 [a4 silence])]
+      PartitionExtended = {P2T Partition}
+      Expected = [
+         note(duration:5.0 instrument:none sharp:false name:a octave:4)
+         silence(duration:5.0)
+      ]
+   in
+      {AssertEquals PartitionExtended Expected 'TestDuration Failed'}
+   end
 end
 
 proc {TestStretch P2T}
@@ -153,6 +204,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 proc {Test Mix P2T}
+   {System.show '--------------------------------------------'}
    {Property.put print print(width:100)}
    {Property.put print print(depth:100)}
    {System.show 'tests have started'}
