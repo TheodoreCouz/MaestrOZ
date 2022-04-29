@@ -1,5 +1,5 @@
 local
-    \insert 'tests.oz'
+    \insert 'testsDarius.oz'
     % See project statement for API details.
     % !!! Please remove CWD identifier when submitting your project !!!
     % CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % dieg
@@ -12,7 +12,6 @@ local
     % utils
     Concat
     TotalDuration
-    RoundedDiv
     GetPos
     NextNote
     NextChord
@@ -80,6 +79,8 @@ in
                         {TotalDurationAux T Acc+D}
                     [] silence(duration:D) then
                         {TotalDurationAux T Acc+D}
+                    [] nil then
+                        {TotalDurationAux T Acc}
                     else
                         {TotalDurationAux T Acc+H.1.duration}
                     end
@@ -88,14 +89,6 @@ in
             end
         in
         {TotalDurationAux Partition 0.0}
-        end
-    end
-
-    % returns the rounded division between A and B (A//B in python)
-    fun {RoundedDiv A B}
-        if B == 0 then 0
-        else 
-            {FloatToInt {IntToFloat A}/{IntToFloat B}}
         end
     end
 
@@ -140,7 +133,7 @@ in
         end
 
         Res = {NoteToExtended Spectrum.Index}
-        Oct = Note.octave + {RoundedDiv (Start+N) 12}
+        Oct = Note.octave + (Start+N) div 12
 
         if Oct > 10 orelse Oct < 0 then FOct = 0
         else FOct = Oct
@@ -272,6 +265,7 @@ in
                     ExtendedSound = {SilenceToExtended Sound}
                 [] silence then 
                     ExtendedSound = {SilenceToExtended Sound}
+                [] nil then ExtendedSound = nil
                 else ExtendedSound = {NoteToExtended Sound}
                 end
             ExtendedSound|{Drone Sound Amount-1}
@@ -301,6 +295,7 @@ in
                         silence(duration:Factor*D)|{StretchAux Factor T}
                     [] note(duration:D instrument:I sharp:S name:N octave:O) then
                         note(duration:(D*Factor) instrument:I name:N octave:O sharp:S)|{StretchAux Factor T}
+                    [] nil then nil|{StretchAux Factor T}
                     else nil end
                 else nil
                 end
@@ -495,6 +490,9 @@ in
             [] silence(duration:D) then % silence
                 H|{PartitionToTimedList T}
 
+            [] nil then
+                nil|{PartitionToTimedList T}
+
             else
                 if {IsList H} then % chord
                     if {Length H} == 0 then nil
@@ -609,8 +607,8 @@ in
         else nil end % reached the end of the list
     end
 
-    {Test Mix PartitionToTimedList}
-
+    {Browse {Project.run Mix PartitionToTimedList [partition([c d e f g a b])]  'out.wav' }}
+    %{Test Mix PartitionToTimedList}
 end
 
 % silence dans un accord (ok)

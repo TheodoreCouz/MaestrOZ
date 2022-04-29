@@ -94,11 +94,15 @@ end
 
 proc {TestDuration P2T}
    local
-      Partition = [duration(seconds:10.0 [a4 silence])]
+      Partition = [duration(seconds:9.0 [a4 silence [a4 b4]])]
       PartitionExtended = {P2T Partition}
       Expected = [
-         note(duration:5.0 instrument:none sharp:false name:a octave:4)
-         silence(duration:5.0)
+         note(duration:3.0 instrument:none sharp:false name:a octave:4)
+         silence(duration:3.0)
+         [
+            note(duration:3.0 instrument:none sharp:false name:a octave:4)
+            note(duration:3.0 instrument:none sharp:false name:b octave:4)
+         ]
       ]
    in
       {AssertEquals PartitionExtended Expected 'TestDuration Failed'}
@@ -106,15 +110,74 @@ proc {TestDuration P2T}
 end
 
 proc {TestStretch P2T}
-   skip
+   local
+      Partition = [stretch(factor:2.0 [a4 silence [a4 b4]])]
+      PartitionExtended = {P2T Partition}
+      Expected = [
+         note(duration:2.0 instrument:none sharp:false name:a octave:4)
+         silence(duration:2.0)
+         [
+            note(duration:2.0 instrument:none sharp:false name:a octave:4)
+            note(duration:2.0 instrument:none sharp:false name:b octave:4)
+         ]
+      ]
+
+      P1 = {P2T [stretch(factor:0.5 [stretch(factor:0.5 [a4])])]}
+      E1 = [note(duration:0.25 instrument:none sharp:false name:a octave:4)]
+   in
+      {AssertEquals PartitionExtended Expected 'TestStretch Failed'}
+      {AssertEquals P1 E1 'TestStretch P1E1 Failed'}
+   end
 end
 
 proc {TestDrone P2T}
-   skip
+   local
+      Partition = [drone(amount:2 note:[a4 b4]) drone(amount:2 note:a4)]
+      PartitionExtended = {P2T Partition}
+      Expected = [
+         [
+            note(duration:1.0 instrument:none sharp:false name:a octave:4)
+            note(duration:1.0 instrument:none sharp:false name:b octave:4)
+         ]
+         [
+            note(duration:1.0 instrument:none sharp:false name:a octave:4)
+            note(duration:1.0 instrument:none sharp:false name:b octave:4)
+         ]
+         note(duration:1.0 instrument:none sharp:false name:a octave:4)
+         note(duration:1.0 instrument:none sharp:false name:a octave:4)
+      ]
+   in
+      {AssertEquals PartitionExtended Expected 'TestDrone Failed'}
+   end
 end
 
 proc {TestTranspose P2T}
-   skip
+   local
+      P1 = {P2T [transpose(semitones:0 [a4 [a4 b4] silence])]}
+      E1 = [
+         note(duration:1.0 instrument:none sharp:false name:a octave:4)
+
+         [
+            note(duration:1.0 instrument:none sharp:false name:a octave:4)
+            note(duration:1.0 instrument:none sharp:false name:b octave:4)
+         ]
+         silence(duration:1.0)
+      ]
+
+      P2 = {P2T [transpose(semitones:5 [a4 [a4 b4] silence])]}
+      E2 = [
+         note(duration:1.0 instrument:none sharp:false name:d octave:5)
+
+         [
+            note(duration:1.0 instrument:none sharp:false name:d octave:5)
+            note(duration:1.0 instrument:none sharp:false name:e octave:5)
+         ]
+         silence(duration:1.0)
+      ]
+   in
+      {AssertEquals P1 E1 'TestTranspose Failed 1'}
+      {AssertEquals P2 E2 'TestTranspose Failed 2'}
+   end
 end
 
 proc {TestP2TChaining P2T}
@@ -124,6 +187,22 @@ end
 
 proc {TestEmptyChords P2T}
    skip
+end
+
+proc {TestNil P2T}
+   local
+      Partition = [f#3 drone(note:nil amount:5) b6]
+      PartitionExtended = {P2T Partition}
+      Expected = [note(name:f octave:3 sharp:true duration:1.0 instrument:none)
+                  nil
+                  nil
+                  nil
+                  nil
+                  nil
+      note(name:b octave:6 sharp:false duration:1.0 instrument:none)]
+   in
+      {AssertEquals PartitionExtended Expected 'TestNil Failed'}
+   end
 end
    
 proc {TestP2T P2T}
@@ -136,6 +215,7 @@ proc {TestP2T P2T}
    {TestTranspose P2T}
    {TestP2TChaining P2T}
    {TestEmptyChords P2T}   
+   {TestNil P2T}
    {AssertEquals {P2T nil} nil 'nil partition'}
 end
 
