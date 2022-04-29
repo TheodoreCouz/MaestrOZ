@@ -2,7 +2,7 @@ local
 
     % Diego Troch Noma: 0725200
     % Théodore Cousin Noma:
-        
+
     \insert 'testsDarius.oz'
     % See project statement for API details.
     % !!! Please remove CWD identifier when submitting your project !!!
@@ -10,10 +10,12 @@ local
     %CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' %theo laptop
     %CWD = '/home/aloka/Unif/BAC2/Q2/Para/MaestrOZ/MaestrOZ/Template/' %theo pc fixe
     [Project] = {Link [CWD#'Project2022.ozf']}
+    Time = {Link ['x-oz://boot/Time']}.1.getReferenceTime
 
     %%%%%%%%%%%%%%%%%%%FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     % utils
+    Start
     Concat
     TotalDuration
     GetPos
@@ -611,8 +613,11 @@ in
         else nil end % reached the end of the list
     end
 
-    {Browse {Project.run Mix PartitionToTimedList [partition([c d e f g a b])] 'out.wav' }}
+    %{Browse {Project.run Mix PartitionToTimedList [partition([c d e f g a b])] 'out.wav' }}
     %{Test Mix PartitionToTimedList}
+    Start = {Time}
+    {Browse {Project.run Mix PartitionToTimedList JOY 'out.wav'}}
+    {Browse {IntToFloat {Time}-Start} / 1000.0}
 end
 
 % silence dans un accord (ok)
