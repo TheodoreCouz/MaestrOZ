@@ -60,8 +60,8 @@ local
     PI = 3.14159265358979
     U = 44100.0
     %TEST = {Project.load CWD#'test.dj.oz'}
-    MII = {Project.load CWD#'mii.dj.oz'}
-    %JOY = {Project.load CWD#'joy.dj.oz'}
+    %MII = {Project.load CWD#'mii.dj.oz'}
+    JOY = {Project.load CWD#'joy.dj.oz'}
 
 in
 
@@ -139,7 +139,7 @@ in
         if Start+N < 0 then 
             Oct = Note.octave - 1 + (Start+N) div 12
         else
-            Oct = Note.octave + (Start+N) div 12
+            Oct = Note.octave + (Start+N-1) div 12
         end
 
         if Oct > 10 orelse Oct < 0 then FOct = 0
@@ -251,7 +251,9 @@ in
                     note(name:Atom octave:4 sharp:false duration:1.0 instrument:none)
                 [] [N O] then
                     note(name:{StringToAtom [N]} octave:{StringToInt [O]} sharp:false duration:1.0 instrument: none)
+                else nil
                 end
+            else nil
             end
         end
     end
@@ -641,8 +643,8 @@ in
 
     {Browse '----------------------------'}
     Start = {Time}
-    {Browse {PartitionToTimedList MII}}
-    %{Browse {Project.run Mix PartitionToTimedList MII 'out.wav' }}
+    %{Browse {PartitionToTimedList MII}}
+    {Browse {Project.run Mix PartitionToTimedList JOY 'out.wav' }}
     %{Test Mix PartitionToTimedList}
     {Browse 'Time of execution:'}
     {Browse {IntToFloat {Time}-Start} / 1000.0}
