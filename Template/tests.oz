@@ -248,7 +248,12 @@ proc {TestReverse P2T Mix}
 end
 
 proc {TestRepeat P2T Mix}
-   skip
+   local
+      P1 = [repeat([a4 b4])]
+      Processed = {Mix P2T P1}
+   in 
+      {AssertEquals Processed [a4 b4 a4 b4] 'TestRepeat Failed'}
+   end
 end
 
 proc {TestLoop P2T Mix}
