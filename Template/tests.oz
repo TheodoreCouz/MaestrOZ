@@ -223,7 +223,12 @@ end
 % TEST Mix
 
 proc {TestSamples P2T Mix}
-   skip
+   local 
+      P1 = [samples([1.0 1.0 1.0])]
+      Processed = {Mix P2T P1}
+   in
+      {AssertEquals Processed [1.0 1.0 1.0] 'TestSamples Failed'}
+   end
 end
 
 proc {TestPartition P2T Mix}

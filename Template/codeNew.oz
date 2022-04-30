@@ -3,7 +3,7 @@ local
     % Diego Troch Noma: 0725200
     % Théodore Cousin Noma: 47202000
 
-    \insert 'testsDarius.oz'
+    \insert 'tests.oz'
     % See project statement for API details.
     % !!! Please remove CWD identifier when submitting your project !!!
     %CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % dieg
@@ -16,7 +16,6 @@ local
 
     % utils
     Start
-    Concat
     TotalDuration
     GetPos
     NextNote
@@ -66,12 +65,6 @@ local
 in
 
     %%%%%%%%%%%%%%%%%%%%%%%%UTILS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-    % Appends [B] to [A]
-    fun {Concat A B}
-        {Append A B}
-    end
 
     % returns the total duration of [Partition]
     fun {TotalDuration Partition}
@@ -397,7 +390,7 @@ in
             if Amount == 1.0 then
               Music
             else
-              {Concat Music {MixRepeat (Amount - 1.0) Music}}
+              {Append Music {MixRepeat (Amount - 1.0) Music}}
             end
         end
 
@@ -405,11 +398,11 @@ in
         fun {MixClip Low High Mu}
             case Mu of H|T then 
                 if H < Low then 
-                    {Concat [Low] {MixClip Low High T}}
+                    {Append [Low] {MixClip Low High T}}
                 elseif H > High then
-                    {Concat [High] {MixClip Low High T}}
+                    {Append [High] {MixClip Low High T}}
                 else 
-                    {Concat [H] {MixClip Low High T}}
+                    {Append [H] {MixClip Low High T}}
                 end
             else 
               nil
@@ -420,7 +413,7 @@ in
         fun {MixLoop Seconds Music} MusicDuration in
             MusicDuration = {IntToFloat {List.length Music}} / 44100.0
             if Seconds >= MusicDuration then
-                {Concat Music {MixLoop (Seconds - MusicDuration) Music}}
+                {Append Music {MixLoop (Seconds - MusicDuration) Music}}
             else 
               {MixCut 0.0 Seconds 0.0 Music}
             end
@@ -439,7 +432,7 @@ in
                         0.0 | {Silencio (ElAccumulador - 1.0)}
                     end
                 end
-                    Temporal = {Concat {Silencio (Duracion*44100.0)} M}
+                    Temporal = {Append {Silencio (Duracion*44100.0)} M}
                     {MixMergeMEXICO [1.0#M Factor#Temporal]}
             end
         end
@@ -455,12 +448,12 @@ in
                 else
                     if Counter >= (EndTime * 44100.0) then
                         nil
-                    else {Concat [H] {MixCut StartTime EndTime (Counter+1.0) T}}
+                    else {Append [H] {MixCut StartTime EndTime (Counter+1.0) T}}
                     end
                 end
             else 
                 if Counter =< (EndTime * 44100.0) then
-                    {Concat [0.0] {MixCut StartTime EndTime (Counter+1.0) nil}}
+                    {Append [0.0] {MixCut StartTime EndTime (Counter+1.0) nil}}
                 else 
                     nil
                 end
@@ -504,19 +497,19 @@ in
     fun {PartitionToTimedList P}
         case P of H|T then
             case H of duration(seconds:S P) then % duration transformation
-                {Concat {Duration S P}{PartitionToTimedList T}}
+                {Append {Duration S P}{PartitionToTimedList T}}
 
             [] note(duration:D name:N octave:O sharp:S instrument:I) then
                 {NoteToExtended H}|{PartitionToTimedList T}
 
             [] stretch(factor:F P) then % stretch transformation
-                {Concat {Stretch F P}{PartitionToTimedList T}}
+                {Append {Stretch F P}{PartitionToTimedList T}}
 
             [] drone(note:N amount:A) then % drone transformation
-                {Concat {Drone N A}{PartitionToTimedList T}}
+                {Append {Drone N A}{PartitionToTimedList T}}
 
             [] transpose(semitones:S P) then % transpose transformation
-                {Concat {Transpose S P}{PartitionToTimedList T}}
+                {Append {Transpose S P}{PartitionToTimedList T}}
 
             [] silence then % case of silence
                 {SilenceToExtended silence}|{PartitionToTimedList T}
@@ -571,12 +564,12 @@ in
             fun {PartMixAux MusicEx}
                 case MusicEx of H|T then
                     case H of note(name:N octave:O sharp:S duration:D instrument:I) then
-                        {Concat {Aux H} {PartMixAux T}}
+                        {Append {Aux H} {PartMixAux T}}
                     [] silence(duration:D) then 
-                        {Concat {GetPoints D 0.0 0.0} {PartMixAux T}}
+                        {Append {GetPoints D 0.0 0.0} {PartMixAux T}}
                     [] H1|T1 then % is a chord
                         case H1 of note(name:N octave:O sharp:S duration:D instrument:I) then
-                            {Concat {MixChord H} {PartMixAux T}}
+                            {Append {MixChord H} {PartMixAux T}}
                         else nil
                         end
                     else nil
@@ -596,45 +589,45 @@ in
         case Music of H|T then
 
             case H of merge(Muse) then
-                {Concat {MixMerge P2T Muse} {Mix P2T T}}
+                {Append {MixMerge P2T Muse} {Mix P2T T}}
 
             [] partition(P) then
-                {Concat {PartMix P2T P} {Mix P2T T}}
+                {Append {PartMix P2T P} {Mix P2T T}}
 
             [] repeat(amount:Amount Muse) then
-                {Concat {MixRepeat Amount {Mix P2T Muse}} {Mix P2T T}}
+                {Append {MixRepeat Amount {Mix P2T Muse}} {Mix P2T T}}
 
             [] wave(Path) then
-                {Concat {Project.readFile Path} {Mix P2T T}}
+                {Append {Project.readFile Path} {Mix P2T T}}
 
             [] reverse(Muse) then
-                {Concat {Reverse {Mix P2T Muse}} {Mix P2T T}}
+                {Append {Reverse {Mix P2T Muse}} {Mix P2T T}}
 
             [] samples(Sample) then 
-                {Concat Sample {Mix P2T T}}
+                {Append Sample {Mix P2T T}}
 
             [] clip(low:Low high:High Mu) then
                 if Low > High then % if base case not respected
                     {Mix P2T T}
                 else 
-                    {Concat {MixClip Low High {Mix P2T Mu}} {Mix P2T T}} % use clip filter
+                    {Append {MixClip Low High {Mix P2T Mu}} {Mix P2T T}} % use clip filter
                 end
 
             [] cut(start:StartTime finish:EndTime M) then
                 if StartTime > EndTime then
                     {Mix P2T T}
                 else
-                    {Concat {MixCut StartTime EndTime 0.0 {Mix P2T M}} {Mix P2T T}}
+                    {Append {MixCut StartTime EndTime 0.0 {Mix P2T M}} {Mix P2T T}}
                 end
 
             [] loop(seconds:Seconds Music) then
-                {Concat {MixLoop Seconds {Mix P2T Music}} {Mix P2T T}}
+                {Append {MixLoop Seconds {Mix P2T Music}} {Mix P2T T}}
 
             [] echo(delay:Duracion decay:Factor M) then 
-                {Concat {MexIcho Duracion Factor {Mix P2T M}} {Mix P2T T}}
+                {Append {MexIcho Duracion Factor {Mix P2T M}} {Mix P2T T}}
 
             [] fade(start:S out:O Muse) then
-                {Concat {MixFade S O {Mix P2T Muse}} {Mix P2T T}}
+                {Append {MixFade S O {Mix P2T Muse}} {Mix P2T T}}
 
             else nil end % not supposed to happen
 
@@ -644,8 +637,8 @@ in
     {Browse '----------------------------'}
     Start = {Time}
     %{Browse {PartitionToTimedList MII}}
-    {Browse {Project.run Mix PartitionToTimedList JOY 'out.wav' }}
-    %{Test Mix PartitionToTimedList}
+    %{Browse {Project.run Mix PartitionToTimedList JOY 'out.wav' }}
+    {Test Mix PartitionToTimedList}
     {Browse 'Time of execution:'}
     {Browse {IntToFloat {Time}-Start} / 1000.0}
 end
