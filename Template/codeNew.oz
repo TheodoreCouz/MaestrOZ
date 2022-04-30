@@ -26,6 +26,7 @@ local
     MultList
     MergeList
     MultEach
+    RemoveNil
 
     % extended
     NoteToExtended
@@ -205,17 +206,13 @@ in
     fun {MergeList A B}
         local 
             fun {MergeListAux A B Acc}
-                {Browse Acc}
-                case A#B of nil#nil then 
-                    {Browse 'C1'}
+                case A#B of nil#nil then
                     Acc
                 else 
                     case A of nil then 
-                        {Browse 'C2'}
                         {Append Acc B}
                     else
-                        case B of nil then 
-                            {Browse 'C3'}
+                        case B of nil then
                             {Append Acc A}
                         else 
                             {MergeListAux A.2 B.2 {Append Acc [A.1 + B.1]}}
@@ -228,6 +225,18 @@ in
         end
     end
 
+    % Removes each nil item in a chord
+    fun {RemoveNil Chord}
+        case Chord of H|T then 
+            case H of nil then 
+                {RemoveNil T}
+            else 
+                H|{RemoveNil T}
+            end
+        else 
+            nil
+        end
+    end
 
     %%%%%%%%%%%%%%%%%%%%%%%%EXTENDED%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -370,8 +379,11 @@ in
         % merge function
         fun {MixMerge P2T ToMerge}
             fun {MergeAux Music}
-                case Music of Factor#Part then {MultEach {PartMix P2T Part.1} Factor}
-                else nil end
+                case Music of Factor#Part then
+                    {MultEach {Mix P2T Part} Factor}
+                else 
+                    nil 
+                end
             end
         in {FoldR {Map ToMerge MergeAux} MergeList nil}
         end
@@ -387,25 +399,24 @@ in
 
         % Repeat function
         fun {MixRepeat Amount Music}
-            if Amount == 1.0 then
+            if Amount == 1 then
               Music
             else
-              {Append Music {MixRepeat (Amount - 1.0) Music}}
+              {Append Music {MixRepeat (Amount - 1) Music}}
             end
         end
 
         % clip function
         fun {MixClip Low High Mu}
-            case Mu of H|T then 
-                if H < Low then 
-                    {Append [Low] {MixClip Low High T}}
-                elseif H > High then
-                    {Append [High] {MixClip Low High T}}
-                else 
-                    {Append [H] {MixClip Low High T}}
+            local
+                fun {Clip Elem}
+                    if Elem < Low then Low
+                    elseif Elem > High then High
+                    else Elem
+                    end
                 end
-            else 
-              nil
+            in
+                {Map Mu Clip}
             end
         end
 
@@ -418,7 +429,6 @@ in
               {MixCut 0.0 Seconds 0.0 Music}
             end
         end
-
 
         % echo
         fun {MexIcho Duracion Factor M}
@@ -550,14 +560,21 @@ in
             fun {Aux Note} {GetPoints Note.duration {GetFreq Note} 1.0} end
 
             % treats chord
-            fun {MixChord Chord} Len Divide Samples in
-                Len = {IntToFloat {List.length Chord}} % number of notes in Chord
-                % Divides each element of [L] by [Factor ]
-                fun {Divide L}
-                    L/Len
-                end
-                Samples = {Map Chord Aux}
+            fun {MixChord Chord} 
+                local
+                    FChord = {RemoveNil Chord}
+
+                    Len = {IntToFloat {List.length FChord}} % number of notes in Chord
+
+                    % Divides each element of [L] by [Factor ]
+                    fun {Divide L}
+                        L/Len
+                    end
+                    
+                    Samples = {Map FChord Aux}
+                in
                 {Map {FoldR Samples MergeList nil} Divide}
+                end
             end
             
             % applies GetPoints to each element of [MusicEx]
@@ -565,13 +582,18 @@ in
                 case MusicEx of H|T then
                     case H of note(name:N octave:O sharp:S duration:D instrument:I) then
                         {Append {Aux H} {PartMixAux T}}
+
                     [] silence(duration:D) then 
                         {Append {GetPoints D 0.0 0.0} {PartMixAux T}}
+                    
+                    [] nil then {PartMixAux T}
+
                     [] H1|T1 then % is a chord
                         case H1 of note(name:N octave:O sharp:S duration:D instrument:I) then
                             {Append {MixChord H} {PartMixAux T}}
                         else nil
                         end
+
                     else nil
                     end
                 else nil
@@ -603,7 +625,7 @@ in
             [] reverse(Muse) then
                 {Append {Reverse {Mix P2T Muse}} {Mix P2T T}}
 
-            [] samples(Sample) then 
+            [] samples(Sample) then
                 {Append Sample {Mix P2T T}}
 
             [] clip(low:Low high:High Mu) then
@@ -629,6 +651,9 @@ in
             [] fade(start:S out:O Muse) then
                 {Append {MixFade S O {Mix P2T Muse}} {Mix P2T T}}
 
+            [] nil then 
+                {Mix P2T T}
+
             else nil end % not supposed to happen
 
         else nil end % reached the end of the list
@@ -637,7 +662,7 @@ in
     {Browse '----------------------------'}
     Start = {Time}
     %{Browse {PartitionToTimedList MII}}
-    %{Browse {Project.run Mix PartitionToTimedList JOY 'out.wav' }}
+    %{Browse {Project.run Mix PartitionToTimedList [partition([a drone(amount:2 note:d) b c a drone(amount:2 note:d) b c])] 'out.wav' }}
     {Test Mix PartitionToTimedList}
     {Browse 'Time of execution:'}
     {Browse {IntToFloat {Time}-Start} / 1000.0}
