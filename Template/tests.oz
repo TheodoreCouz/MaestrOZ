@@ -252,7 +252,13 @@ proc {TestRepeat P2T Mix}
 end
 
 proc {TestLoop P2T Mix}
-   skip
+   local
+      P1 = [loop(seconds:6.0 [a4 c4 d4])]
+      E1 = {Mix P2T [a4 c4 d4 a4 c4 d4]}
+     Processed = {Mix P2T P1}
+   in
+      {AssertEquals Processed E1 'TestLoop Failed'}
+   end
 end
 
 proc {TestClip P2T Mix}
