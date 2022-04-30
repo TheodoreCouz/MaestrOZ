@@ -4,11 +4,11 @@ TotalTests  = {Cell.new 0}
 % Time in seconds corresponding to 5 samples.
 FiveSamples = 0.00011337868
 
-% Takes a list of samples, round them to 4 decimal places and multiply them by
+% Takes a list of samples, round them to 3 decimal places and multiply them by
 % 10000. Use this to compare list of samples to avoid floating-point rounding
 % errors.
 fun {Normalize Samples}
-   {Map Samples fun {$ S} {IntToFloat {FloatToInt S*10000.0}} end}
+   {Map Samples fun {$ S} {IntToFloat {FloatToInt S*1000.0}} end}
 end
 
 proc {Assert Cond Msg}
@@ -28,6 +28,21 @@ proc {AssertEquals A E Msg}
       {System.show expect(E)}
    else
       PassedTests := @PassedTests + 1
+   end
+end
+
+fun {Approx A B Eps}
+   case A#B of nil#nil then true
+   else 
+      case A of nil then false
+      else 
+         case B of nil then false
+         else
+            if {Abs (A.1 - B.1)} > Eps then false
+            else {Approx A.2 B.2 Eps}
+            end
+         end
+      end
    end
 end
 
@@ -226,8 +241,11 @@ proc {TestSamples P2T Mix}
    local 
       P1 = [samples([1.0 1.0 1.0])]
       Processed = {Mix P2T P1}
+
+      P2 = {Mix P2T [nil samples([1.0 1.0 1.0])]}
    in
       {AssertEquals Processed [1.0 1.0 1.0] 'TestSamples Failed'}
+      {AssertEquals P2 [1.0 1.0 1.0] 'TestSamples Failed'}
    end
 end
 
@@ -236,19 +254,65 @@ proc {TestPartition P2T Mix}
 end
 
 proc {TestWave P2T Mix}
-   skip
+   local
+      E1 = {Mix P2T [partition([stretch(factor:2.0 [a4])])]}
+      P1 = {Mix P2T [wave('a4.wav')]}
+
+      P2 = {Mix P2T [nil wave('a4.wav')]}
+   in
+      {AssertEquals {Approx P1 E1 2.0} true 'TestWave Failed'}
+      {AssertEquals {Approx P2 E1 2.0} true 'TestWave Failed'}
+   end
 end
 
 proc {TestMerge P2T Mix}
-   skip
+   local
+      E1 = [1.0 2.0 4.0]
+      P1 = {Mix P2T [merge([0.5#[samples([1.0 2.0 4.0])] 0.5#[samples([1.0 2.0 4.0])]])]}
+
+      E2 = [
+         (0.3*7.0 + 0.1 + 0.6*87.0) 
+         (0.3*8.0 + 0.2 + 2.4)
+         (0.3 + 0.4 + 1.8)
+         ]
+      P2 = {Mix P2T [merge([0.3#[samples([7.0 8.0 1.0])] 0.1#[samples([1.0 2.0 4.0])] 0.6#[samples([87.0 4.0 3.0])]])]}
+
+      P3 = {Mix P2T [merge([nil 1.0#[samples([1.0 2.0 4.0])]])]}
+      E3 = [1.0 2.0 4.0]
+   in
+      {AssertEquals P1 E1 'TestMerge Failed 1'}
+      {AssertEquals {Approx P1 E1 1.0} true 'TestMerge Failed 2'}
+      {AssertEquals {Approx P1 E1 1.0} true 'TestMerge Failed 3'}
+   end
 end
 
 proc {TestReverse P2T Mix}
-   skip
+   local 
+      P1 = {Mix P2T [reverse([samples([1.0 2.0 3.0])])]}
+      E1 = [3.0 2.0 1.0]
+
+      P2 = {Mix P2T [reverse([nil samples([1.0 2.0 3.0])])]}
+   in
+      {AssertEquals P1 E1 'TestReverse Failed'}
+      {AssertEquals P2 E1 'TestReverse Failed'}
+   end
 end
 
 proc {TestRepeat P2T Mix}
-   skip
+   local
+      P1 = {Mix P2T [repeat(amount:2 [partition([a b c])])]}
+      E1 = {Mix P2T [partition([a b c a b c])]}
+
+      P2 = {Mix P2T [repeat(amount:2 [partition([a drone(amount:2 note:d) b c])])]}
+      E2 = {Mix P2T [partition([a drone(amount:2 note:d) b c a drone(amount:2 note:d) b c])]}
+
+      P3 = {Mix P2T [repeat(amount:2 [partition([a nil c])])]}
+      E3 = {Mix P2T [partition([a nil c a nil c])]}
+   in
+      {AssertEquals P1 E1 'TestRepeat Failed 1'}
+      {AssertEquals P2 E2 'TestRepeat Failed 2'}
+      {AssertEquals P3 E3 'TestRepeat Failed 3'}
+   end
 end
 
 proc {TestLoop P2T Mix}
@@ -256,7 +320,15 @@ proc {TestLoop P2T Mix}
 end
 
 proc {TestClip P2T Mix}
-   skip
+   local
+      E1 = [0.5 ~0.5 0.0]
+      P1 = {Mix P2T [clip(low:~0.5 high:0.5 [samples([1.0 ~1.0 0.0])])]}
+
+      P2 = {Mix P2T [nil clip(low:~0.5 high:0.5 [samples([1.0 ~1.0 0.0])])]}
+   in
+      {AssertEquals P1 E1 'TestClip Failed'}
+      {AssertEquals P2 E1 'TestClip Failed'}
+   end
 end
 
 proc {TestEcho P2T Mix}

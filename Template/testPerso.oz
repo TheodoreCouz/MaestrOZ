@@ -249,5 +249,21 @@ declare
     {Browse E}
 
 
-    declare
+declare
+
+% clip function
+fun {MixClip Low High Mu}
+    local
+        fun {Clip Low High Elem}
+            if Elem < Low then Low
+            elsif Elem > High then High
+            else Elem
+            end
+        end
+    in
+        {Map Mu Clip}
+    end
+end
+
+{Browse {MixClip ~0.5 0.5 [1.0 ~1.0 0.0]}}
 
