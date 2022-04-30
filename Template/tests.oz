@@ -250,9 +250,10 @@ end
 proc {TestRepeat P2T Mix}
    local
       P1 = [repeat([a4 b4])]
+      E1 = {Mix P2T [a4 b4 a4 b4]}
       Processed = {Mix P2T P1}
    in 
-      {AssertEquals Processed [a4 b4 a4 b4] 'TestRepeat Failed'}
+      {AssertEquals Processed E1 'TestRepeat Failed'}
    end
 end
 
