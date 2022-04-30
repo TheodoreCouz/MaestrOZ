@@ -189,3 +189,65 @@ end
     %{Browse {Project.run Mix PartitionToTimedList [repeat(amount:10.0 [echo(delay:0.5 decay:0.5 Music)])] 'out.wav' }}
     %{Browse {Project.run Mix PartitionToTimedList [echo(delay:0.5 decay:0.5 [loop(seconds:4.0 [echo(delay:0.5 decay:0.5 Music)])])]  'out.wav' }}
     %{Browse {Project.run Mix PartitionToTimedList [cut(start:1.0 finish:2.0 Music)]  'out.wav' }}
+
+declare 
+
+% Appends [B] to [A]
+fun {Concat A B}
+    local 
+        fun {ConcatAux A B Acc}
+            {Browse Acc}
+            case A of H|T then 
+                {ConcatAux T B H|Acc}
+            else
+                Acc|B
+            end
+        end
+    in
+        {ConcatAux A B _}
+    end
+end
+
+A = [1 2 3]
+B = [3 4 5]
+
+{Browse {Concat A B}}
+
+
+declare 
+
+    % Merges two lists
+    fun {MergeList A B}
+        local 
+            fun {MergeListAux A B Acc}
+                {Browse Acc}
+                case A#B of nil#nil then 
+                    {Browse 'C1'}
+                    Acc
+                else 
+                    case A of nil then 
+                        {Browse 'C2'}
+                        {Append Acc B}
+                    else
+                        case B of nil then 
+                            {Browse 'C3'}
+                            {Append Acc A}
+                        else 
+                            {MergeListAux A.2 B.2 {Append Acc [A.1 + B.1]}}
+                        end
+                    end
+                end
+            end
+        in
+            {MergeListAux A B [first]}.2
+        end
+    end
+
+    A = [1 2 3 4 5]
+    B = [1 2 3]
+    E = {MergeList A B}
+    {Browse E}
+
+
+    declare
+

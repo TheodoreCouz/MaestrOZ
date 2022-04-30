@@ -1,13 +1,13 @@
 local
 
     % Diego Troch Noma: 0725200
-    % Théodore Cousin Noma:
+    % Théodore Cousin Noma: 47202000
 
     \insert 'testsDarius.oz'
     % See project statement for API details.
     % !!! Please remove CWD identifier when submitting your project !!!
-    CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % dieg
-    %CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' %theo laptop
+    %CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % dieg
+    CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' %theo laptop
     %CWD = '/home/aloka/Unif/BAC2/Q2/Para/MaestrOZ/MaestrOZ/Template/' %theo pc fixe
     [Project] = {Link [CWD#'Project2022.ozf']}
     Time = {Link ['x-oz://boot/Time']}.1.getReferenceTime
@@ -59,21 +59,18 @@ local
 
     PI = 3.14159265358979
     U = 44100.0
-    TEST = {Project.load CWD#'test.dj.oz'}
+    %TEST = {Project.load CWD#'test.dj.oz'}
     MII = {Project.load CWD#'mii.dj.oz'}
-    JOY = {Project.load CWD#'joy.dj.oz'}
+    %JOY = {Project.load CWD#'joy.dj.oz'}
 
 in
 
     %%%%%%%%%%%%%%%%%%%%%%%%UTILS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
     % Appends [B] to [A]
     fun {Concat A B}
-        case A of H|T then
-            H|{Concat T B}
-        else
-            B
-        end
+        {Append A B}
     end
 
     % returns the total duration of [Partition]
@@ -139,7 +136,11 @@ in
         end
 
         Res = {NoteToExtended Spectrum.Index}
-        Oct = Note.octave + (Start+N) div 12
+        if Start+N < 0 then 
+            Oct = Note.octave - 1 + (Start+N) div 12
+        else
+            Oct = Note.octave + (Start+N) div 12
+        end
 
         if Oct > 10 orelse Oct < 0 then FOct = 0
         else FOct = Oct
@@ -181,7 +182,7 @@ in
         0.5*{Float.sin (2.0*PI*F*(I/U))}
     end
 
-    % Multiplies each element of a list between them
+    % Multiplies each element of a list between them (Rec Ter)
     fun {MultList L} MultListAux in
         fun {MultListAux L Acc}
             case L of H|T then
@@ -193,27 +194,44 @@ in
         {MultListAux L 1.0}
     end
 
-    % mutltiplies each element of a list
+    % mutltiplies each element of a list (Rec Ter)
     fun {MultEach L Factor}
-        case L of H|T then 
-            H*Factor|{MultEach T Factor}
-        else nil 
+        local 
+            fun {MultEachAux L Factor Acc}
+                case L of H|T then 
+                    {MultEachAux T Factor {Append Acc [Factor*H]}}
+                else Acc.2
+                end
+            end
+        in
+            {MultEachAux L Factor [head]}
         end
     end
 
-    % Merges two lists
+    % Merges two lists (Rec Ter)
     fun {MergeList A B}
-        case A#B of nil#nil then
-            nil
-        else
-            case A of nil then 
-                0.0 + B.1|{MergeList nil B.2}
-            else 
-                case B of nil then 0.0 + A.1|{MergeList A.2 nil}
-                else
-                    A.1 + B.1|{MergeList A.2 B.2}
+        local 
+            fun {MergeListAux A B Acc}
+                {Browse Acc}
+                case A#B of nil#nil then 
+                    {Browse 'C1'}
+                    Acc
+                else 
+                    case A of nil then 
+                        {Browse 'C2'}
+                        {Append Acc B}
+                    else
+                        case B of nil then 
+                            {Browse 'C3'}
+                            {Append Acc A}
+                        else 
+                            {MergeListAux A.2 B.2 {Append Acc [A.1 + B.1]}}
+                        end
+                    end
                 end
             end
+        in
+            {MergeListAux A B [first]}.2
         end
     end
 
@@ -279,35 +297,43 @@ in
         end
     end
 
-    % stretches the duration of [Partition] by [Factor]
+        % stretches the duration of [Partition] by [Factor]
     fun {Stretch Factor Partition} % Factor must be a float
         local 
 
             fun {StretchChord Factor Chord}
-                case Chord of H|T then 
-                    case H of note(duration:D instrument:I sharp:S name:N octave:O) then
-                        note(duration:(D*Factor) instrument:I name:N octave:O sharp:S)|{StretchChord Factor T}
-                    [] silence(duration:D) then silence(duration:D*Factor)|{StretchChord Factor T}
+                local
+                    fun {StretchChordAux Factor Chord Acc}
+                        case Chord of H|T then 
+                            case H of note(duration:D instrument:I sharp:S name:N octave:O) then
+                                {StretchChordAux Factor T {Append Acc [note(duration:(D*Factor) instrument:I name:N octave:O sharp:S)]}}
+                            [] silence(duration:D) then {StretchChordAux Factor T {Append Acc [silence(duration:D*Factor)]}}
+                            else nil
+                            end
+                        else Acc
+                        end
                     end
-                else nil
+                in
+                    {StretchChordAux Factor Chord [first]}.2
                 end
             end
 
-            fun {StretchAux Factor Partition}
+            fun {StretchAux Factor Partition Acc}
                 case Partition of H|T then
                     case H of Head|Tail then
-                        {StretchChord Factor H}|{StretchAux Factor T}
+                        {StretchAux Factor T {Append Acc [{StretchChord Factor H}]}}
                     [] silence(duration:D) then
-                        silence(duration:Factor*D)|{StretchAux Factor T}
+                        {StretchAux Factor T {Append Acc [silence(duration:Factor*D)]}}
                     [] note(duration:D instrument:I sharp:S name:N octave:O) then
-                        note(duration:(D*Factor) instrument:I name:N octave:O sharp:S)|{StretchAux Factor T}
-                    [] nil then nil|{StretchAux Factor T}
+                        {StretchAux Factor T {Append Acc [note(duration:(D*Factor) instrument:I name:N octave:O sharp:S)]}}
+                    [] nil then 
+                        {StretchAux Factor T {Append Acc [nil]}}
                     else nil end
-                else nil
+                else Acc
                 end
             end
         in
-            {StretchAux Factor {PartitionToTimedList Partition}}
+            {StretchAux Factor {PartitionToTimedList Partition} [first]}.2
         end
     end
 
@@ -613,10 +639,12 @@ in
         else nil end % reached the end of the list
     end
 
-    %{Browse {Project.run Mix PartitionToTimedList [partition([c d e f g a b])] 'out.wav' }}
-    %{Test Mix PartitionToTimedList}
+    {Browse '----------------------------'}
     Start = {Time}
-    {Browse {Project.run Mix PartitionToTimedList JOY 'out.wav'}}
+    {Browse {PartitionToTimedList MII}}
+    %{Browse {Project.run Mix PartitionToTimedList MII 'out.wav' }}
+    %{Test Mix PartitionToTimedList}
+    {Browse 'Time of execution:'}
     {Browse {IntToFloat {Time}-Start} / 1000.0}
 end
 
