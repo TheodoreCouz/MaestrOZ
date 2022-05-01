@@ -6,8 +6,8 @@ local
     \insert 'tests.oz'
     % See project statement for API details.
     % !!! Please remove CWD identifier when submitting your project !!!
-    CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % dieg
-    %CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' %theo laptop
+    %CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % dieg
+    CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' %theo laptop
     %CWD = '/home/aloka/Unif/BAC2/Q2/Para/MaestrOZ/MaestrOZ/Template/' %theo pc fixe
     [Project] = {Link [CWD#'Project2022.ozf']}
     Time = {Link ['x-oz://boot/Time']}.1.getReferenceTime
@@ -45,7 +45,7 @@ local
     MixMerge
     MixCut
     MixLoop
-    MexIcho
+    MixEcho
     MixMergeMEXICO
     MixFade
 
@@ -60,8 +60,8 @@ local
     PI = 3.14159265358979
     U = 44100.0
     %TEST = {Project.load CWD#'test.dj.oz'}
-    %MII = {Project.load CWD#'mii.dj.oz'}
-    JOY = {Project.load CWD#'joy.dj.oz'}
+    MII = {Project.load CWD#'mii.dj.oz'}
+    %JOY = {Project.load CWD#'joy.dj.oz'}
 
 in
 
@@ -191,14 +191,11 @@ in
     % mutltiplies each element of a list (Rec Ter)
     fun {MultEach L Factor}
         local 
-            fun {MultEachAux L Factor Acc}
-                case L of H|T then 
-                    {MultEachAux T Factor {Append Acc [Factor*H]}}
-                else Acc.2
-                end
+            fun {MultEachAux Elem}
+                Elem*Factor
             end
         in
-            {MultEachAux L Factor [head]}
+            {Map L MultEachAux}
         end
     end
 
@@ -215,6 +212,7 @@ in
                         case B of nil then
                             {Append Acc A}
                         else 
+                            {Browse A.1 + B.1}
                             {MergeListAux A.2 B.2 {Append Acc [A.1 + B.1]}}
                         end
                     end
@@ -385,16 +383,11 @@ in
                     nil 
                 end
             end
-        in {FoldR {Map ToMerge MergeAux} MergeList nil}
-        end
-
-        % merge function
-        fun {MixMergeMEXICO ToMerge}
-            fun {MergeAux Music}
-                case Music of Factor#Part then {MultEach Part Factor}
-                else nil end
-            end
-        in {FoldR {Map ToMerge MergeAux} MergeList nil}
+            Mapped = {Map ToMerge MergeAux}
+            Folded = {FoldL Mapped MergeList nil}
+        in 
+            {Browse Folded} 
+            Folded
         end
 
         % Repeat function
@@ -421,52 +414,62 @@ in
         end
 
         % loop function
-        fun {MixLoop Seconds Music} MusicDuration in
-            MusicDuration = {IntToFloat {List.length Music}} / 44100.0
-            if Seconds >= MusicDuration then
-                {Append Music {MixLoop (Seconds - MusicDuration) Music}}
-            else 
-              {MixCut 0.0 Seconds 0.0 Music}
+        fun {MixLoop Seconds Music}
+            case Music of H|T then
+                local 
+                    MusicDuration = {IntToFloat {List.length Music}} / U
+                in
+                    if Seconds >= MusicDuration then
+                        {Append Music {MixLoop (Seconds - MusicDuration) T}}
+                    else 
+                        {MixCut 0.0 Seconds Music}
+                    end
+                end
+            else nil 
             end
         end
 
         % echo
-        fun {MexIcho Duracion Factor M}
-            local 
-                Temporal Silencio 
+        fun {MixEcho P2T Dur Factor M}
+            local
+                Second = {Flatten [partition([silence(duration:Dur)]) M]}
+                ToMerge = [(1.0-Factor)#M Factor#Second]
+                {Browse ToMerge}
             in
-                fun{Silencio ElAccumulador}
-                case ElAccumulador of 1.0 then
-                      0.0
-                     else
-                        0.0 | {Silencio (ElAccumulador - 1.0)}
-                    end
-                end
-                    Temporal = {Append {Silencio (Duracion*44100.0)} M}
-                    {MixMergeMEXICO [1.0#M Factor#Temporal]}
+                {MixMerge P2T ToMerge}
             end
         end
-        
-
-        % fade
 
         % cut function
-        fun {MixCut StartTime EndTime Counter M}
-            case M of H|T then
-                if Counter =< (StartTime * 44100.0) then
-                    {MixCut StartTime EndTime (Counter+1.0) T}
-                else
-                    if Counter >= (EndTime * 44100.0) then
-                        nil
-                    else {Append [H] {MixCut StartTime EndTime (Counter+1.0) T}}
+        fun {MixCut StartTime EndTime M}
+            local
+                fun {MixCutAux Start End Music Counter}
+                    if Start < 0.0 then
+                        % if Start bound is lower than start of music
+                        0.0|{MixCutAux Start+1.0 End Music Counter}
+                    else
+                        case Music of H|T then
+                            if Counter < Start then % not yet in the interval considered
+                                {MixCutAux Start End T Counter+1.0}
+                            else % we're in the interval
+                                if Counter >= End then nil % reached the end of the interval
+                                else % Keep on adding elements
+                                    H|{MixCutAux Start End T Counter+1.0}
+                                end
+                            end
+                        else 
+                            if Counter < End then % we did not reach the upper bound but the music is finished (add silence)
+                                0.0|{MixCutAux Start End nil Counter+1.0}
+                            else % end of the time and end of the list
+                                nil
+                            end
+                        end
                     end
                 end
-            else 
-                if Counter =< (EndTime * 44100.0) then
-                    {Append [0.0] {MixCut StartTime EndTime (Counter+1.0) nil}}
-                else 
-                    nil
-                end
+                Start = StartTime * U
+                End = EndTime * U
+            in
+                {MixCutAux Start End M 0.0}
             end
         end
 
@@ -573,97 +576,103 @@ in
                     
                     Samples = {Map FChord Aux}
                 in
-                {Map {FoldR Samples MergeList nil} Divide}
+                {Map {FoldL Samples MergeList nil} Divide}
                 end
             end
             
             % applies GetPoints to each element of [MusicEx]
-            fun {PartMixAux MusicEx}
-                case MusicEx of H|T then
+            fun {PartMixAux Item}
+                case Item of note(name:N octave:O sharp:S duration:D instrument:I) then
+                    {Aux Item}
+                
+                [] silence(duration:D) then 
+                    {GetPoints D 0.0 0.0}
+
+                [] H|T then % is a chord
                     case H of note(name:N octave:O sharp:S duration:D instrument:I) then
-                        {Append {Aux H} {PartMixAux T}}
-
-                    [] silence(duration:D) then 
-                        {Append {GetPoints D 0.0 0.0} {PartMixAux T}}
-                    
-                    [] nil then {PartMixAux T}
-
-                    [] H1|T1 then % is a chord
-                        case H1 of note(name:N octave:O sharp:S duration:D instrument:I) then
-                            {Append {MixChord H} {PartMixAux T}}
-                        else nil
-                        end
-
-                    else nil
+                        {MixChord H}
+                    else nil % undefined Item
                     end
-                else nil
-                end
+
+                [] nil then nil
+
+                else nil % undefined Item
+                end  
             end
         in
             MusicExtended = {P2T Music}
-            {PartMixAux MusicExtended}
+            {Flatten {RemoveNil {Map MusicExtended PartMixAux}}}
         end
     end 
 
     % mix function (provides .wav files)
-    fun {Mix P2T Music}
+fun {Mix P2T Music}
+    case Music of nil then nil 
+    else
+        local
 
-        case Music of H|T then
+            fun{MixItem Item}
 
-            case H of merge(Muse) then
-                {Append {MixMerge P2T Muse} {Mix P2T T}}
+                case Item of partition(P) then
+                    {PartMix P2T P}
 
-            [] partition(P) then
-                {Append {PartMix P2T P} {Mix P2T T}}
+                [] samples(Sample) then
+                    Sample
 
-            [] repeat(amount:Amount Muse) then
-                {Append {MixRepeat Amount {Mix P2T Muse}} {Mix P2T T}}
+                [] wave(Path) then
+                    {Project.readFile Path}
 
-            [] wave(Path) then
-                {Append {Project.readFile Path} {Mix P2T T}}
+                [] merge(Muse) then
+                    {MixMerge P2T Muse}
 
-            [] reverse(Muse) then
-                {Append {Reverse {Mix P2T Muse}} {Mix P2T T}}
+                [] echo(delay:D decay:F M) then 
+                    {MixEcho P2T D F M}
 
-            [] samples(Sample) then
-                {Append Sample {Mix P2T T}}
+                [] reverse(Muse) then
+                    {Reverse {Mix P2T Muse}}
 
-            [] clip(low:Low high:High Mu) then
-                if Low > High then % if base case not respected
-                    {Mix P2T T}
-                else 
-                    {Append {MixClip Low High {Mix P2T Mu}} {Mix P2T T}} % use clip filter
+                [] repeat(amount:Amount Muse) then
+                    {MixRepeat Amount {Mix P2T Muse}}
+
+                [] cut(start:StartTime finish:EndTime M) then
+                    if StartTime > EndTime then
+                        nil
+                    else
+                        {MixCut StartTime EndTime {Mix P2T M}}
+                    end
+
+                [] loop(seconds:Seconds Music) then
+                    {MixLoop Seconds {Mix P2T Music}}
+
+                [] clip(low:Low high:High Mu) then
+                    if Low > High then % if base case not respected
+                        nil
+                    else 
+                        {MixClip Low High {Mix P2T Mu}} % use clip filter
+                    end
+
+                [] fade(start:S out:O Muse) then
+                    {MixFade S O {Mix P2T Muse}}
+
+                else nil % not supposed to happen
                 end
-
-            [] cut(start:StartTime finish:EndTime M) then
-                if StartTime > EndTime then
-                    {Mix P2T T}
-                else
-                    {Append {MixCut StartTime EndTime 0.0 {Mix P2T M}} {Mix P2T T}}
-                end
-
-            [] loop(seconds:Seconds Music) then
-                {Append {MixLoop Seconds {Mix P2T Music}} {Mix P2T T}}
-
-            [] echo(delay:Duracion decay:Factor M) then 
-                {Append {MexIcho Duracion Factor {Mix P2T M}} {Mix P2T T}}
-
-            [] fade(start:S out:O Muse) then
-                {Append {MixFade S O {Mix P2T Muse}} {Mix P2T T}}
-
-            [] nil then 
-                {Mix P2T T}
-
-            else nil end % not supposed to happen
-
-        else nil end % reached the end of the list
+            end
+        in
+            {Flatten {RemoveNil {Map Music MixItem}}}
+        end
     end
+end
 
     {Browse '----------------------------'}
     Start = {Time}
-    %{Browse {PartitionToTimedList MII}}
-    %{Browse {Project.run Mix PartitionToTimedList [partition([a drone(amount:2 note:d) b c a drone(amount:2 note:d) b c])] 'out.wav' }}
-    {Test Mix PartitionToTimedList}
+    %{Browse {Project.run Mix PartitionToTimedList [echo(decay:0.5 delay:0.5 [partition([a b c])])] 'out.wav' }}
+    %{Test Mix PartitionToTimedList}
+    % {Browse {Project.run Mix PartitionToTimedList [merge([
+    %     0.5#[partition([a b c])]
+    %     0.5#[partition([silence(duration:0.5)]) partition([a b c])]
+    % ])] 'out.wav' }}
+    {Browse {Project.run Mix PartitionToTimedList MII 'out.wav' }}
+    %{Browse {MixLoop (1.0/U) [0.1 0.2 0.3]}}
     {Browse 'Time of execution:'}
     {Browse {IntToFloat {Time}-Start} / 1000.0}
 end

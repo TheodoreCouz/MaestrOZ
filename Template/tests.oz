@@ -31,15 +31,34 @@ proc {AssertEquals A E Msg}
    end
 end
 
+Correct = {Cell.new 0.0}
+Total = {Cell.new 0.0}
+
 fun {Approx A B Eps}
-   case A#B of nil#nil then true
+   case A#B of nil#nil then
+      local 
+         Ratio = (@Correct / @Total)
+      in
+         Correct := 0.0
+         Total := 0.0
+         Ratio
+      end
    else 
-      case A of nil then false
+      case A of nil then
+          Total := @Total + 1.0
+          {Approx nil B.2 Eps}
       else 
-         case B of nil then false
+         case B of nil then
+            Total := @Total + 1.0
+            {Approx A.2 nil Eps}
          else
-            if {Abs (A.1 - B.1)} > Eps then false
-            else {Approx A.2 B.2 Eps}
+            if {Abs (A.1 - B.1)} > Eps then
+               Total := @Total + 1.0
+               {Approx A.2 B.2 Eps}
+            else 
+               Total := @Total + 1.0
+               Correct := @Correct + 1.0
+               {Approx A.2 B.2 Eps}
             end
          end
       end
@@ -195,15 +214,6 @@ proc {TestTranspose P2T}
    end
 end
 
-proc {TestP2TChaining P2T}
-   % test a partition with multiple transformations
-   skip
-end
-
-proc {TestEmptyChords P2T}
-   skip
-end
-
 proc {TestNil P2T}
    local
       Partition = [f#3 drone(note:nil amount:5) b6]
@@ -227,9 +237,7 @@ proc {TestP2T P2T}
    {TestDuration P2T}
    {TestStretch P2T}
    {TestDrone P2T}
-   {TestTranspose P2T}
-   {TestP2TChaining P2T}
-   {TestEmptyChords P2T}   
+   {TestTranspose P2T} 
    {TestNil P2T}
    {AssertEquals {P2T nil} nil 'nil partition'}
 end
@@ -249,9 +257,9 @@ proc {TestSamples P2T Mix}
    end
 end
 
-proc {TestPartition P2T Mix}
-   skip
-end
+% proc {TestPartition P2T Mix}
+%    skip
+% end
 
 proc {TestWave P2T Mix}
    local
@@ -260,8 +268,8 @@ proc {TestWave P2T Mix}
 
       P2 = {Mix P2T [nil wave('a4.wav')]}
    in
-      {AssertEquals {Approx P1 E1 2.0} true 'TestWave Failed'}
-      {AssertEquals {Approx P2 E1 2.0} true 'TestWave Failed'}
+      {AssertEquals {Approx P1 E1 2.0}>0.95 true 'TestWave Failed'}
+      {AssertEquals {Approx P2 E1 2.0}>0.95 true 'TestWave Failed'}
    end
 end
 
@@ -281,8 +289,8 @@ proc {TestMerge P2T Mix}
       E3 = [1.0 2.0 4.0]
    in
       {AssertEquals P1 E1 'TestMerge Failed 1'}
-      {AssertEquals {Approx P1 E1 1.0} true 'TestMerge Failed 2'}
-      {AssertEquals {Approx P1 E1 1.0} true 'TestMerge Failed 3'}
+      {AssertEquals {Approx P1 E1 1.0}>0.95 true 'TestMerge Failed 2'}
+      {AssertEquals {Approx P1 E1 1.0}>0.95 true 'TestMerge Failed 3'}
    end
 end
 
@@ -317,11 +325,12 @@ end
 
 proc {TestLoop P2T Mix}
    local
-      P1 = [loop(seconds:6.0 [a4 c4 d4])]
-      E1 = {Mix P2T [a4 c4 d4 a4 c4 d4]}
-     Processed = {Mix P2T P1}
+      P1 = [loop(seconds:6.0 [partition([a4 c4 d4 e4])])]
+      E1 = {Mix P2T [partition([a4 c4 d4 e4 a4 c4])]}
+      Processed = {Mix P2T P1}
+      Ratio1 = {Approx {Normalize Processed} {Normalize E1} 2.0}
    in
-      {AssertEquals Processed E1 'TestLoop Failed'}
+      {AssertEquals Ratio1>0.95 true 'TestLoop Failed Ratio='#Ratio1}
    end
 end
 
@@ -346,12 +355,21 @@ proc {TestFade P2T Mix}
 end
 
 proc {TestCut P2T Mix}
-   skip
+   local
+      P1 = {Mix P2T [cut(start:0.0 finish:4.0 [partition([a4 c4 d4 e4 f4])])]}
+      E1 = {Mix P2T [partition([a4 c4 d4 e4])]}
+      Ratio1 = {Approx {Normalize P1} {Normalize E1} 2.0}
+
+      P2 = {Mix P2T [nil cut(start:0.0 finish:4.0 [partition([nil a4 c4 d4 e4 f4])])]}
+      Ratio2 = {Approx {Normalize P2} {Normalize E1} 2.0}
+   in
+      {AssertEquals Ratio1>0.95 true 'TestCut Failed Ratio='#Ratio1}
+      {AssertEquals Ratio2>0.95 true 'TestCut Failed Ratio='#Ratio2}
+   end
 end
 
 proc {TestMix P2T Mix}
    {TestSamples P2T Mix}
-   {TestPartition P2T Mix}
    {TestWave P2T Mix}
    {TestMerge P2T Mix}
    {TestReverse P2T Mix}
