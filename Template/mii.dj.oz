@@ -20,7 +20,7 @@ local
     Part4 = [stretch(factor:0.25 [silence a5 c#6 silence a5 silence f#5])]
 
     Part5 = [stretch(factor:0.25 [silence f#5 silence a5 c#6 silence a5 silence f#5])]
-    Part6 = [stretch(factor:0.3 [b5 silence silence b5 g5 d5 c#5 b5 g5 c#5 a5 f#5 c5 b4 d5 d5 b4])]
+    Part6 = [stretch(factor:0.28 [b5 silence silence b5 g5 d5 c#5 b5 g5 c#5 a5 f#5 c5 b4 d5 d5 b4])]
 
   
 
