@@ -57,6 +57,9 @@ local
     Mix
     PartMix
 
+    % Extension
+    FadeAll
+
     %%%%%%%%%%%%%%%%%%%%VARIABLES%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     PI = 3.14159265358979
@@ -482,14 +485,13 @@ in
         % fade 
         fun {MixFade Start Out Music}
             local
-                DurS = Start * U
                 % deals with the start of the music
-                fun {FadeStart Music I Coef}
+                fun {FadeStart Music I Coef DurS}
                     case Music of H|T then
-                        if I == DurS then
+                        if I >= DurS then
                             Music
                         else
-                            H*Coef|{FadeStart T I+1.0 I/DurS}
+                            H*Coef|{FadeStart T I+1.0 (I + 1.0)/DurS DurS}
                         end
                     else nil end
                 end 
@@ -498,17 +500,30 @@ in
                 fun {FadeEnd Music}
                     local 
                         MusicReversed = {Reverse Music}
-                        MusicProcessed = {FadeStart MusicReversed 0.0 0.0}
+                        MusicProcessed = {FadeStart MusicReversed 0.0 0.0 Out*U}
                     in
                         {Reverse MusicProcessed}
                     end
                 end
                 MusicS
             in
-                MusicS = {FadeStart Music 0.0 0.0}
+                MusicS = {FadeStart Music 1.0 0.0 Start*U}
                 {FadeEnd MusicS}
             end
         end
+
+        % fades everyNote
+        fun {FadeAll P2T Partition}
+            local
+                fun {FadeAux Item} Delay in
+                    Delay = 0.04
+                    fade(start:Delay out:Delay [partition([Item])])
+                end
+            in
+                {Mix P2T {Map Partition FadeAux}}
+            end
+        end
+
     
 
     %%%%%%%%%%%%%%%%%%%%%%%%MAIN-FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -665,6 +680,9 @@ fun {Mix P2T Music}
                 [] fade(start:S out:O Muse) then
                     {MixFade S O {Mix P2T Muse}}
 
+                [] fadeAll(P) then
+                    {FadeAll P2T {P2T P.1.1}}
+
                 else nil % not supposed to happen
                 end
             end
@@ -679,7 +697,7 @@ end
     %Todel
     {Browse '----------------------------'}
     Start = {Time}
-    {Browse {Project.run Mix PartitionToTimedList [partition([[a b c]])] 'out.wav' }}
+    {Browse {Project.run Mix PartitionToTimedList [fadeAll([partition([c d e f g a b c5])])] 'out.wav' }}
     {Browse 'Time of execution:'}
     {Browse {IntToFloat {Time}-Start} / 1000.0}
 

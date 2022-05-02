@@ -1,28 +1,38 @@
-declare 
-% Merges two lists (Rec Ter)
-fun {MergeList A B}
-    local 
-        fun {MergeListAux A B Acc}
-            case A#B of nil#nil then
-                Acc
-            else 
-                case A of nil then 
-                    {Append Acc B}
-                else
-                    case B of nil then
-                        {Append Acc A}
-                    else 
-                        {MergeListAux A.2 B.2 {Append Acc [A.1 + B.1]}}
-                    end
-                end
+
+fun {FadeHelper Music Index CountOfStep StartDuration StopDuration Length ValueStepStart ValueStepStop}
+      local StopStartsHere in
+      StopStartsHere=Length-StopDuration 
+      if CountOfStep >= StopStartsHere then 
+         case Music of H|T then %cas fade de fin
+            H*Index |{FadeHelper T Index-ValueStepStop CountOfStep+1.0 StartDuration StopDuration Length ValueStepStart ValueStepStop }
+         else
+            nil
+         end
+      else
+         case Music of H|T then
+            if CountOfStep < StartDuration then %cas fade de début
+               H*Index| {FadeHelper T Index+ValueStepStart CountOfStep+1.0 StartDuration StopDuration Length ValueStepStart ValueStepStop }
+            else    %cas entre les 2 fades 
+               H |{FadeHelper T 1.0-ValueStepStop CountOfStep+1.0 StartDuration StopDuration Length ValueStepStart ValueStepStop }
             end
-        end
-    in
-        {MergeListAux A B [first]}.2
-    end
-end
+         else
+            nil 
+         end
+      end
+      end 
+   end
 
-A = [0.0 0.0 0.0 0.0 0.0 1.0]
-B = [1.0 1.0 1.0 1.0]
+   fun {Fade Music Start Stop }
+      local StartDuration StopDuration Length ValueStepStart ValueStepStop in 
 
-{Browse {MergeList A B}}
+         StartDuration=Start*44100.0
+         StopDuration=Stop*44100.0
+         
+         Length={IntToFloat {List.length Music}}
+
+         ValueStepStart=1.0/StartDuration
+         ValueStepStop=1.0/StopDuration
+
+         {FadeHelper Music 0.0 0.0 StartDuration StopDuration Length ValueStepStart ValueStepStop }
+      end 
+   end
