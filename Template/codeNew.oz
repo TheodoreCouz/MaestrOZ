@@ -6,8 +6,8 @@ local
     \insert 'tests.oz'
     % See project statement for API details.
     % !!! Please remove CWD identifier when submitting your project !!!
-    CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % dieg
-    %CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' %theo laptop
+    %CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % dieg
+    CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' %theo laptop
     %CWD = '/home/aloka/Unif/BAC2/Q2/Para/MaestrOZ/MaestrOZ/Template/' %theo pc fixe
     [Project] = {Link [CWD#'Project2022.ozf']}
     Time = {Link ['x-oz://boot/Time']}.1.getReferenceTime
@@ -499,10 +499,10 @@ in
                 % deals with the end of the music
                 fun {FadeEnd Music}
                     local 
-                        MusicReversed = {Reverse Music}
+                        MusicReversed = {Reverse Music} % first reverse
                         MusicProcessed = {FadeStart MusicReversed 0.0 0.0 Out*U}
                     in
-                        {Reverse MusicProcessed}
+                        {Reverse MusicProcessed} % second reverse
                     end
                 end
                 MusicS
@@ -684,7 +684,8 @@ fun {Mix P2T Music}
                     {MixFade S O {Mix P2T Muse}}
 
                 [] fadeAll(P) then
-                    {FadeAll P2T {P2T P.1.1}}
+                    {Browse P}
+                    {FadeAll P2T {P2T P}}
 
                 else nil % not supposed to happen
                 end
@@ -700,7 +701,7 @@ end
     %Todel
     {Browse '----------------------------'}
     Start = {Time}
-    {Browse {Project.run Mix PartitionToTimedList MII 'out.wav' }}
+    {Browse {Project.run Mix PartitionToTimedList [fadeAll([a])] 'out.wav' }}
     {Browse 'Time of execution:'}
     {Browse {IntToFloat {Time}-Start} / 1000.0}
 
