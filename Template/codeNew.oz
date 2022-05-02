@@ -601,7 +601,7 @@ in
 
                 [] H|T then % is a chord
                     case H of note(name:N octave:O sharp:S duration:D instrument:I) then
-                        {MixChord H}
+                        {MixChord Item}
                     else nil % undefined Item
                     end
 
@@ -679,7 +679,7 @@ end
     %Todel
     {Browse '----------------------------'}
     Start = {Time}
-    {Browse {Project.run Mix PartitionToTimedList [echo(delay:0.05 decay:0.5 JOY)] 'out.wav' }}
+    {Browse {Project.run Mix PartitionToTimedList [partition([[a b c]])] 'out.wav' }}
     {Browse 'Time of execution:'}
     {Browse {IntToFloat {Time}-Start} / 1000.0}
 
