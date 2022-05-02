@@ -369,16 +369,16 @@ proc {TestCut P2T Mix}
 end
 
 proc {TestMix P2T Mix}
-   {TestSamples P2T Mix}
-   {TestWave P2T Mix}
-   {TestMerge P2T Mix}
-   {TestReverse P2T Mix}
-   {TestRepeat P2T Mix}
+   %{TestSamples P2T Mix}
+   %{TestWave P2T Mix}
+   % {TestMerge P2T Mix}
+   % {TestReverse P2T Mix}
+   % {TestRepeat P2T Mix}
    {TestLoop P2T Mix}
-   {TestClip P2T Mix}
-   {TestEcho P2T Mix}
-   {TestFade P2T Mix}
-   {TestCut P2T Mix}
+   % {TestClip P2T Mix}
+   % {TestEcho P2T Mix}
+   % {TestFade P2T Mix}
+   % {TestCut P2T Mix}
    {AssertEquals {Mix P2T nil} nil 'nil music'}
 end
 
@@ -389,8 +389,8 @@ proc {Test Mix P2T}
    {Property.put print print(width:100)}
    {Property.put print print(depth:100)}
    {System.show 'tests have started'}
-   {TestP2T P2T}
-   {System.show 'P2T tests have run'}
+   %{TestP2T P2T}
+   %{System.show 'P2T tests have run'}
    {TestMix P2T Mix}
    {System.show 'Mix tests have run'}
    {System.show test(passed:@PassedTests total:@TotalTests)}

@@ -12,6 +12,8 @@ local
     [Project] = {Link [CWD#'Project2022.ozf']}
     Time = {Link ['x-oz://boot/Time']}.1.getReferenceTime
 
+
+
     %%%%%%%%%%%%%%%%%%%FUNCTIONS%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     % utils
@@ -27,6 +29,7 @@ local
     MergeList
     MultEach
     RemoveNil
+    RemoveLast
 
     % extended
     NoteToExtended
@@ -46,7 +49,6 @@ local
     MixCut
     MixLoop
     MixEcho
-    MixMergeMEXICO
     MixFade
 
 
@@ -59,9 +61,8 @@ local
 
     PI = 3.14159265358979
     U = 44100.0
-    %TEST = {Project.load CWD#'test.dj.oz'}
-    MII = {Project.load CWD#'mii.dj.oz'}
-    %JOY = {Project.load CWD#'joy.dj.oz'}
+
+    JOY = {Project.load CWD#'mii.dj.oz'}
 
 in
 
@@ -199,27 +200,19 @@ in
         end
     end
 
-    % Merges two lists (Rec Ter)
+    % Merges two lists
     fun {MergeList A B}
-        local 
-            fun {MergeListAux A B Acc}
-                case A#B of nil#nil then
-                    Acc
-                else 
-                    case A of nil then 
-                        {Append Acc B}
-                    else
-                        case B of nil then
-                            {Append Acc A}
-                        else 
-                            {Browse A.1 + B.1}
-                            {MergeListAux A.2 B.2 {Append Acc [A.1 + B.1]}}
-                        end
-                    end
+        case A#B of nil#nil then
+            nil
+        else
+            case A of nil then 
+                0.0 + B.1|{MergeList nil B.2}
+            else 
+                case B of nil then 0.0 + A.1|{MergeList A.2 nil}
+                else
+                    A.1 + B.1|{MergeList A.2 B.2}
                 end
             end
-        in
-            {MergeListAux A B [first]}.2
         end
     end
 
@@ -232,6 +225,18 @@ in
                 H|{RemoveNil T}
             end
         else 
+            nil
+        end
+    end
+
+    % Removes the last element of List
+    fun {RemoveLast List}
+        case List of H|T then 
+            if T == nil then nil
+            else 
+                H|{RemoveLast T}
+            end
+        else
             nil
         end
     end
@@ -386,7 +391,6 @@ in
             Mapped = {Map ToMerge MergeAux}
             Folded = {FoldL Mapped MergeList nil}
         in 
-            {Browse Folded} 
             Folded
         end
 
@@ -415,32 +419,34 @@ in
 
         % loop function
         fun {MixLoop Seconds Music}
-            case Music of H|T then
-                local 
-                    MusicDuration = {IntToFloat {List.length Music}} / U
-                in
-                    if Seconds >= MusicDuration then
-                        {Append Music {MixLoop (Seconds - MusicDuration) T}}
-                    else 
-                        {MixCut 0.0 Seconds Music}
-                    end
-                end
-            else nil 
+            local 
+                TotalDur = {IntToFloat {Length Music}}/U
+            in
+                if Seconds < TotalDur then 
+                    {MixCut 0.0 Seconds Music}
+                elseif Seconds > TotalDur then 
+                    Music|{MixLoop (Seconds - TotalDur) Music}
+                else 
+                    nil
+                end 
             end
         end
 
         % echo
         fun {MixEcho P2T Dur Factor M}
-            local
-                Second = {Flatten [partition([silence(duration:Dur)]) M]}
-                ToMerge = [(1.0-Factor)#M Factor#Second]
-                {Browse ToMerge}
+            local 
+                First = {Mix P2T M}
+
+                Second = {MultEach {Append 
+                    {Mix P2T [partition([silence(duration:Dur)])]}
+                    First
+                } Factor}
             in
-                {MixMerge P2T ToMerge}
+                {MergeList First Second}
             end
         end
 
-        % cut function
+        %cut function
         fun {MixCut StartTime EndTime M}
             local
                 fun {MixCutAux Start End Music Counter}
@@ -449,7 +455,7 @@ in
                         0.0|{MixCutAux Start+1.0 End Music Counter}
                     else
                         case Music of H|T then
-                            if Counter < Start then % not yet in the interval considered
+                            if Counter =< Start then % not yet in the interval considered
                                 {MixCutAux Start End T Counter+1.0}
                             else % we're in the interval
                                 if Counter >= End then nil % reached the end of the interval
@@ -458,7 +464,7 @@ in
                                 end
                             end
                         else 
-                            if Counter < End then % we did not reach the upper bound but the music is finished (add silence)
+                            if Counter =< End then % we did not reach the upper bound but the music is finished (add silence)
                                 0.0|{MixCutAux Start End nil Counter+1.0}
                             else % end of the time and end of the list
                                 nil
@@ -466,10 +472,10 @@ in
                         end
                     end
                 end
-                Start = StartTime * U
-                End = EndTime * U
+                Start = {Float.floor StartTime * U}
+                End = {Float.ceil EndTime * U}
             in
-                {MixCutAux Start End M 0.0}
+                {MixCutAux Start End M 1.0}
             end
         end
 
@@ -552,7 +558,7 @@ in
 
             % returns a list of points associated to a note and its duration
             fun {GetPoints Dur Freq I}
-                if I == (Dur*U) then
+                if I >= (Dur*U) then
                     nil
                 else
                     {Sample Freq I}|{GetPoints Dur Freq I+1.0}
@@ -560,7 +566,12 @@ in
             end
 
             % transforms Note (in order to use in map fun)  
-            fun {Aux Note} {GetPoints Note.duration {GetFreq Note} 1.0} end
+            fun {Aux Note} 
+                case Note of note(duration:D name:N octave:O sharp:S instrument:I) then
+                    {GetPoints D {GetFreq Note} 0.0} 
+                else nil
+                end
+            end
 
             % treats chord
             fun {MixChord Chord} 
@@ -576,7 +587,7 @@ in
                     
                     Samples = {Map FChord Aux}
                 in
-                {Map {FoldL Samples MergeList nil} Divide}
+                    {Map {FoldL Samples MergeList nil} Divide}
                 end
             end
             
@@ -601,7 +612,7 @@ in
             end
         in
             MusicExtended = {P2T Music}
-            {Flatten {RemoveNil {Map MusicExtended PartMixAux}}}
+            {RemoveLast {Flatten {RemoveNil {Map MusicExtended PartMixAux}}}}
         end
     end 
 
@@ -663,19 +674,13 @@ fun {Mix P2T Music}
     end
 end
 
+    %{Browse {Project.run Mix PartitionToTimedList JOY 'out.wav' }}
+
+    %Todel
     {Browse '----------------------------'}
     Start = {Time}
-    %{Browse {Project.run Mix PartitionToTimedList [echo(decay:0.5 delay:0.5 [partition([a b c])])] 'out.wav' }}
-    %{Test Mix PartitionToTimedList}
-    % {Browse {Project.run Mix PartitionToTimedList [merge([
-    %     0.5#[partition([a b c])]
-    %     0.5#[partition([silence(duration:0.5)]) partition([a b c])]
-    % ])] 'out.wav' }}
-    {Browse {Project.run Mix PartitionToTimedList MII 'out.wav' }}
-    %{Browse {MixLoop (1.0/U) [0.1 0.2 0.3]}}
+    {Browse {Project.run Mix PartitionToTimedList [echo(delay:0.05 decay:0.5 JOY)] 'out.wav' }}
     {Browse 'Time of execution:'}
     {Browse {IntToFloat {Time}-Start} / 1000.0}
-end
 
-% silence dans un accord (ok)
-% accord vide -> remplacer par nil ()
+end
