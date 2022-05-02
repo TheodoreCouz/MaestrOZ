@@ -513,6 +513,9 @@ in
         end
 
         % fades everyNote
+        % fades the transition between each note
+        % Be careful: the [Partition] argument must be an extended partition
+        % not a list of samples!
         fun {FadeAll P2T Partition}
             local
                 fun {FadeAux Item} Delay in
