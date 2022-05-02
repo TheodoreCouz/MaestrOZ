@@ -6,8 +6,8 @@ local
     \insert 'tests.oz'
     % See project statement for API details.
     % !!! Please remove CWD identifier when submitting your project !!!
-    %CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % dieg
-    CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' %theo laptop
+    CWD = '/home/jabier/Desktop/OzPROJECT/MaestrOZ/Template/' % dieg
+    %CWD = '/home/theo/Code/Oz/MaestrOZ/Template/' %theo laptop
     %CWD = '/home/aloka/Unif/BAC2/Q2/Para/MaestrOZ/MaestrOZ/Template/' %theo pc fixe
     [Project] = {Link [CWD#'Project2022.ozf']}
     Time = {Link ['x-oz://boot/Time']}.1.getReferenceTime
@@ -65,7 +65,7 @@ local
     PI = 3.14159265358979
     U = 44100.0
 
-    JOY = {Project.load CWD#'mii.dj.oz'}
+    MII = {Project.load CWD#'mii.dj.oz'}
 
 in
 
@@ -700,7 +700,7 @@ end
     %Todel
     {Browse '----------------------------'}
     Start = {Time}
-    {Browse {Project.run Mix PartitionToTimedList [fadeAll([partition([c d e f g a b c5])])] 'out.wav' }}
+    {Browse {Project.run Mix PartitionToTimedList MII 'out.wav' }}
     {Browse 'Time of execution:'}
     {Browse {IntToFloat {Time}-Start} / 1000.0}
 
